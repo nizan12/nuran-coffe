@@ -40,17 +40,7 @@ export const viewport = {
   themeColor: "#1f6b4f",
 };
 
-export default async function RootLayout({ children }) {
-  let namaToko = toko.nama;
-  let tokoInfo = toko;
-  try {
-    const pub = await ambilPengaturanPublik();
-    if (pub?.tokoInfo) {
-      tokoInfo = pub.tokoInfo;
-      if (pub.tokoInfo.nama) namaToko = pub.tokoInfo.nama;
-    }
-  } catch {}
-
+export default function RootLayout({ children }) {
   return (
     <html lang="id" suppressHydrationWarning>
       <head>
@@ -75,9 +65,9 @@ export default async function RootLayout({ children }) {
         />
       </head>
       <body className="flex min-h-screen flex-col font-sans antialiased" suppressHydrationWarning>
-        <Header namaToko={namaToko} />
+        <Header />
         <main className="mx-auto w-full max-w-5xl flex-1 px-4">{children}</main>
-        <Footer infoToko={tokoInfo} />
+        <Footer />
         <ModalBandingkan />
         <WidgetChatAI />
         <TombolInstallPWA />

@@ -20,7 +20,7 @@ export const revalidate = 0;
 export async function generateMetadata({ params }) {
   const { id } = await params;
   const supabase = buatClientServer();
-  const [pengaturan, { data: rawProduk }] = await Promise.all([
+  const [pengaturan, { data: rawProduk, error }] = await Promise.all([
     ambilPengaturanPublik(),
     supabase
       .from("produk")
@@ -32,10 +32,8 @@ export async function generateMetadata({ params }) {
   const nonaktifIds = pengaturan?.nonaktifIds || [];
   const produk = normalisasiProduk(rawProduk);
 
-  if (!produk || nonaktifIds.includes(Number(id)) || produk.aktif === false) {
-    return {
-      title: "Produk Tidak Ditemukan",
-    };
+  if (error || !produk || nonaktifIds.includes(Number(id)) || produk.aktif === false) {
+    notFound();
   }
 
   const gambar = produk.image || produk.foto_url;
