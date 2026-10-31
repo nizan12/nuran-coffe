@@ -74,7 +74,7 @@ Urutan yang disarankan: US-01, US-02, US-03, US-04, US-05, US-06, lalu fitur bon
 
 ## Tentang aplikasi ini
 
-- **Nama usaha:**
-- **Pembuat:**
-- **Link aplikasi:**
-- **Fitur bonus yang dikerjakan:**
+- **Nama usaha:** Narun Coffee
+- **Pembuat:** nizan12
+- **Link aplikasi:** https://narun-coffe.vercel.app
+- **Fitur bonus yang dikerjakan:** US-07 (List produk admin), US-08 (Tambah produk), US-09 (Ubah produk), US-10 (Hapus produk), US-11 (Filter kategori & pencarian), US-12 (Pilih jumlah pesanan), US-13 (PWA / install di HP), US-14 (Deskripsi produk AI)
