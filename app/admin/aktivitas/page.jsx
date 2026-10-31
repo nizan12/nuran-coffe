@@ -3,6 +3,9 @@ import { ambilPengaturanAdmin } from "@/lib/pengaturanAdmin";
 import { kosongkanLogAktivitas } from "@/app/admin/actions";
 import TombolHapusKonfirmasi from "@/components/TombolHapusKonfirmasi";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata = {
   title: "Log Aktivitas Admin - Admin",
 };

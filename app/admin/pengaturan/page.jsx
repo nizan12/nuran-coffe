@@ -2,6 +2,9 @@ import NavAdmin from "@/components/NavAdmin";
 import FormPengaturanToko from "./FormPengaturanToko";
 import { ambilPengaturanAdmin } from "@/lib/pengaturanAdmin";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata = {
   title: "Profil & Pengaturan Toko - Admin",
 };
