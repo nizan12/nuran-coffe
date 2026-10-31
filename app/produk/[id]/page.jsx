@@ -124,16 +124,30 @@ export default async function HalamanDetailProduk({ params }) {
             <div className="flex items-center gap-2.5">
               <p className="text-sm font-semibold text-teks-lembut">{produk.kategori}</p>
               <span
-                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-bold ${isHabis
+                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-bold ${
+                  isHabis
                     ? "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400"
+                    : Number(produk.stok) <= 5
+                    ? "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
                     : "border-utama/30 bg-utama/10 text-utama"
-                  }`}
+                }`}
               >
                 <span
-                  className={`h-1.5 w-1.5 rounded-full ${isHabis ? "bg-red-500" : "bg-utama shadow-xs"
-                    }`}
+                  className={`h-1.5 w-1.5 rounded-full ${
+                    isHabis
+                      ? "bg-red-500"
+                      : Number(produk.stok) <= 5
+                      ? "bg-amber-500"
+                      : "bg-utama shadow-xs"
+                  }`}
                 />
-                <span>{isHabis ? "Stok Habis" : "Tersedia"}</span>
+                <span>
+                  {isHabis
+                    ? "Stok Habis"
+                    : Number(produk.stok) <= 5
+                    ? `Sisa ${produk.stok} Porsi Lagi!`
+                    : `Tersedia (${produk.stok} porsi)`}
+                </span>
               </span>
             </div>
 

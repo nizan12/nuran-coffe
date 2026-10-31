@@ -9,7 +9,7 @@ export async function GET() {
     const supabase = buatClientServer();
     const { data: rawProduk, error } = await supabase
       .from("produk")
-      .select("id, nama, harga, deskripsi, image, foto_url, kategori_id, kategori_rel:kategori_id(id, nama, slug)")
+      .select("id, nama, harga, deskripsi, image, foto_url, stok, kategori_id, kategori_rel:kategori_id(id, nama, slug)")
       .order("nama", { ascending: true });
 
     if (error) {

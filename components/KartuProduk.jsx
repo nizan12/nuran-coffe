@@ -38,15 +38,21 @@ export default function KartuProduk({ produk }) {
           </span>
         )}
 
-        {/* Badge Status Stok (US-19) */}
+        {/* Badge Status Stok & Jumlah (US-19) */}
         <span
           className={`absolute right-2 top-2 sm:right-2.5 sm:top-2.5 rounded-md px-1.5 py-0.5 text-[10px] sm:text-xs font-semibold backdrop-blur-sm ${
             isHabis
               ? "bg-red-600/90 text-white"
+              : Number(produk.stok) <= 5
+              ? "bg-amber-600/90 text-white"
               : "bg-emerald-600/85 text-white"
           }`}
         >
-          {isHabis ? "Stok Habis" : "Tersedia"}
+          {isHabis
+            ? "Stok Habis"
+            : Number(produk.stok) <= 5
+            ? `Sisa ${produk.stok}`
+            : `Stok: ${produk.stok}`}
         </span>
 
         {/* Tombol Bandingkan (US-37) & Tombol Favorit (US-24) */}
@@ -58,7 +64,16 @@ export default function KartuProduk({ produk }) {
 
       <div className="flex flex-1 flex-col justify-between p-3 sm:p-3.5 gap-2">
         <div>
-          <p className="text-[11px] sm:text-xs font-medium text-teks-lembut truncate">{produk.kategori}</p>
+          <div className="flex items-center justify-between gap-1.5">
+            <p className="text-[11px] sm:text-xs font-medium text-teks-lembut truncate">{produk.kategori}</p>
+            <span className="text-[10px] font-semibold shrink-0">
+              {isHabis ? (
+                <span className="text-red-500 font-bold">Habis</span>
+              ) : (
+                <span className="text-teks-lembut">Stok: <strong className="text-teks">{produk.stok}</strong></span>
+              )}
+            </span>
+          </div>
           <h3 className="font-bold text-xs sm:text-sm leading-snug group-hover:text-utama line-clamp-2 mt-0.5">
             {produk.nama}
           </h3>

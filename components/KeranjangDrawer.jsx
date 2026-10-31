@@ -212,27 +212,36 @@ export default function KeranjangDrawer() {
                           {formatRupiah(item.harga)}
                         </p>
 
-                        {/* Selector Quantity */}
-                        <div className="mt-2 inline-flex items-center rounded-lg border border-garis bg-latar">
-                          <button
-                            type="button"
-                            onClick={() => ubahJumlahItem(item.id, item.jumlah - 1)}
-                            className="px-2.5 py-0.5 text-sm font-bold text-teks-lembut transition hover:text-utama"
-                            aria-label="Kurang satu"
-                          >
-                            −
-                          </button>
-                          <span className="min-w-[1.8rem] text-center text-xs font-bold text-teks">
-                            {item.jumlah}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => ubahJumlahItem(item.id, item.jumlah + 1)}
-                            className="px-2.5 py-0.5 text-sm font-bold text-teks-lembut transition hover:text-utama"
-                            aria-label="Tambah satu"
-                          >
-                            +
-                          </button>
+                        {/* Selector Quantity dengan Pembatasan Stok */}
+                        <div className="mt-2 flex items-center gap-2">
+                          <div className="inline-flex items-center rounded-lg border border-garis bg-latar">
+                            <button
+                              type="button"
+                              onClick={() => ubahJumlahItem(item.id, item.jumlah - 1)}
+                              className="px-2.5 py-0.5 text-sm font-bold text-teks-lembut transition hover:text-utama"
+                              aria-label="Kurang satu"
+                            >
+                              −
+                            </button>
+                            <span className="min-w-[1.8rem] text-center text-xs font-bold text-teks">
+                              {item.jumlah}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => ubahJumlahItem(item.id, item.jumlah + 1)}
+                              disabled={item.stok !== undefined && item.stok !== null && item.jumlah >= item.stok}
+                              className="px-2.5 py-0.5 text-sm font-bold text-teks-lembut transition hover:text-utama disabled:opacity-30 disabled:cursor-not-allowed"
+                              aria-label="Tambah satu"
+                              title={item.stok && item.jumlah >= item.stok ? `Maksimal stok tercapai (${item.stok})` : "Tambah"}
+                            >
+                              +
+                            </button>
+                          </div>
+                          {item.stok !== undefined && item.stok !== null && (
+                            <span className="text-[10px] text-teks-lembut">
+                              Maks: {item.stok}
+                            </span>
+                          )}
                         </div>
                       </div>
 

@@ -26,6 +26,11 @@ export default function TombolWhatsApp({ produk, varianList = [] }) {
   const hargaSatuan = (Number(produk.harga) || 0) + tambahanHarga;
   const total = hargaSatuan * jumlah;
 
+  const stokMaksimal =
+    varianAktif?.stok !== null && varianAktif?.stok !== undefined
+      ? Number(varianAktif.stok)
+      : Number(produk.stok) || 10;
+
   const namaVarian =
     varianAktif?.nama && varianAktif.nama !== "Regular"
       ? `${produk.nama} (${varianAktif.nama})`
@@ -38,6 +43,7 @@ export default function TombolWhatsApp({ produk, varianList = [] }) {
     ...produk,
     nama: namaVarian,
     harga: hargaSatuan,
+    stok: stokMaksimal,
   };
 
   if (isHabis) {
@@ -75,7 +81,13 @@ export default function TombolWhatsApp({ produk, varianList = [] }) {
                 key={v.id || v.nama}
                 type="button"
                 disabled={isVarianHabis}
-                onClick={() => setVarianAktif(v)}
+                onClick={() => {
+                  setVarianAktif(v);
+                  const limit = v.stok !== null && v.stok !== undefined ? Number(v.stok) : Number(produk.stok) || 10;
+                  if (limit > 0 && jumlah > limit) {
+                    setJumlah(limit);
+                  }
+                }}
                 className={`flex items-center justify-between rounded-xl border px-3 py-2 text-xs font-semibold transition ${
                   isVarianHabis
                     ? "opacity-50 cursor-not-allowed bg-latar border-dashed border-garis"
@@ -96,14 +108,14 @@ export default function TombolWhatsApp({ produk, varianList = [] }) {
         </div>
       </div>
 
-      {/* Pemilih Jumlah */}
-      <div className="flex items-center gap-3">
+      {/* Pemilih Jumlah dengan Pembatasan Stok */}
+      <div className="flex flex-wrap items-center gap-3">
         <span className="text-sm font-semibold">Jumlah:</span>
         <div className="inline-flex items-center rounded-lg border border-garis bg-latar">
           <button
             type="button"
             onClick={() => setJumlah((j) => Math.max(1, j - 1))}
-            className="px-3 py-1.5 text-lg font-semibold text-teks-lembut hover:text-utama disabled:opacity-40"
+            className="px-3 py-1.5 text-lg font-semibold text-teks-lembut hover:text-utama disabled:opacity-40 disabled:cursor-not-allowed"
             disabled={jumlah <= 1}
           >
             −
@@ -111,13 +123,18 @@ export default function TombolWhatsApp({ produk, varianList = [] }) {
           <span className="min-w-[2.5rem] text-center text-sm font-bold">{jumlah}</span>
           <button
             type="button"
-            onClick={() => setJumlah((j) => j + 1)}
-            className="px-3 py-1.5 text-lg font-semibold text-teks-lembut hover:text-utama"
+            onClick={() => setJumlah((j) => Math.min(stokMaksimal, j + 1))}
+            className="px-3 py-1.5 text-lg font-semibold text-teks-lembut hover:text-utama disabled:opacity-40 disabled:cursor-not-allowed"
+            disabled={stokMaksimal > 0 && jumlah >= stokMaksimal}
+            title={stokMaksimal > 0 && jumlah >= stokMaksimal ? `Maksimal stok tercapai (${stokMaksimal})` : "Tambah jumlah"}
           >
             +
           </button>
         </div>
-        <span className="text-sm text-teks-lembut">
+        <span className="text-xs text-teks-lembut">
+          (Maks: <strong className="text-teks">{stokMaksimal}</strong>)
+        </span>
+        <span className="text-sm text-teks-lembut ml-auto sm:ml-0">
           Total: <span className="font-bold text-harga">{formatRupiah(total)}</span>
         </span>
       </div>
