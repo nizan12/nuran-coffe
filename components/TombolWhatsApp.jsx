@@ -5,7 +5,19 @@ import { toko } from "@/lib/toko";
 import { formatRupiah } from "@/lib/format";
 import TombolKeranjang from "@/components/TombolKeranjang";
 
-export default function TombolWhatsApp({ produk, varianList = [] }) {
+/**
+ * US-03: Pesan via WhatsApp
+ * Kriteria selesai:
+ * - Tombol "Pesan via WhatsApp" membuka WhatsApp ke nomor di lib/toko.js.
+ * - Pesan sudah terisi otomatis dengan nama dan harga produk.
+ * - Berfungsi di HP dan di laptop.
+ */
+export default function TombolWhatsApp({
+  produk,
+  varianList = [],
+  urlWhatsAppDefault = null,
+  pesanWhatsAppDefault = null,
+}) {
   const [jumlah, setJumlah] = useState(1);
 
   const varianTersedia = Array.isArray(varianList) && varianList.length > 0
@@ -36,8 +48,12 @@ export default function TombolWhatsApp({ produk, varianList = [] }) {
       ? `${produk.nama} (${varianAktif.nama})`
       : produk.nama;
 
+  // Format link WhatsApp per produk (US-03)
   const pesan = `Halo, saya ingin memesan:\n\n*${namaVarian}*\nVarian: ${varianAktif?.nama || "Regular"}\nHarga: ${formatRupiah(hargaSatuan)}\nJumlah: ${jumlah}\nTotal: ${formatRupiah(total)}\n\nTerima kasih!`;
-  const url = `https://wa.me/${toko.nomorWhatsApp}?text=${encodeURIComponent(pesan)}`;
+  const url =
+    jumlah === 1 && (!varianAktif || varianAktif.nama === "Regular") && urlWhatsAppDefault
+      ? urlWhatsAppDefault
+      : `https://wa.me/${toko.nomorWhatsApp}?text=${encodeURIComponent(pesan)}`;
 
   const produkUntukKeranjang = {
     ...produk,

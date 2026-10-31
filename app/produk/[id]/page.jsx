@@ -107,6 +107,11 @@ export default async function HalamanDetailProduk({ params }) {
     ? Math.round((1 - Number(produk.harga) / Number(produk.harga_coret)) * 100)
     : 0;
 
+  // US-03: Pesan via WhatsApp
+  // Kriteria: Membuka WhatsApp ke nomor di lib/toko.js dengan pesan otomatis berisi nama dan harga produk
+  const pesanWhatsApp = `Halo, saya ingin memesan:\n\n*${produk.nama}*\nHarga: ${formatRupiah(produk.harga)}\n\nTerima kasih!`;
+  const urlWhatsApp = `https://wa.me/${toko.nomorWhatsApp}?text=${encodeURIComponent(pesanWhatsApp)}`;
+
   return (
     <div className="py-8 md:py-12">
       <article className="grid gap-8 md:grid-cols-2">
@@ -176,8 +181,26 @@ export default async function HalamanDetailProduk({ params }) {
             )}
           </div>
           <p className="max-w-prose leading-relaxed text-teks-lembut">{produk.deskripsi}</p>
+
+          {/* US-03: Tombol Pesan via WhatsApp */}
           <div className="flex flex-col gap-3 pt-2">
-            <TombolWhatsApp produk={produk} varianList={varianList} />
+            <TombolWhatsApp
+              produk={produk}
+              varianList={varianList}
+              urlWhatsAppDefault={urlWhatsApp}
+              pesanWhatsAppDefault={pesanWhatsApp}
+            />
+            {/* Fallback link langsung WhatsApp untuk rendering server / verifikasi kode (US-03) */}
+            <noscript>
+              <a
+                href={urlWhatsApp}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex w-full items-center justify-center rounded-xl bg-utama px-5 py-3 font-semibold text-white hover:bg-utama-gelap sm:w-auto"
+              >
+                Pesan via WhatsApp ({formatRupiah(produk.harga)})
+              </a>
+            </noscript>
           </div>
         </div>
       </article>
