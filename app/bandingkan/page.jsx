@@ -14,20 +14,33 @@ export const metadata = {
 
 export default async function HalamanBandingkan({ searchParams }) {
   const sp = (await searchParams) || {};
-  let ids = [];
+  let rawIds = [];
 
   if (sp.ids) {
-    ids = sp.ids.split(",").map((s) => s.trim()).filter(Boolean);
+    rawIds = sp.ids.split(",").map((s) => s.trim()).filter(Boolean);
   } else {
-    if (sp.id1) ids.push(sp.id1);
-    if (sp.id2) ids.push(sp.id2);
+    if (sp.id1) rawIds.push(String(sp.id1).trim());
+    if (sp.id2) rawIds.push(String(sp.id2).trim());
   }
 
+  // Pesan peringatan jika memilih lebih dari 2 produk (US-37)
+  const melebihiBatas = rawIds.length > 2;
+  const pesanBatas = melebihiBatas
+    ? `Perhatian: Perbandingan dibatasi maksimal 2 produk. Anda memilih ${rawIds.length} produk, menampilkan 2 produk pertama.`
+    : null;
+
   // Batas maksimal 2 produk (US-37)
-  ids = ids.slice(0, 2);
+  const ids = rawIds.slice(0, 2);
 
   const supabase = buatClientServer();
   let produkBandingkan = [];
+
+  // Ambil semua produk untuk UI pemilihan 2 produk (US-37)
+  const { data: semuaData } = await supabase
+    .from("produk")
+    .select("id, nama, harga, kategori")
+    .order("nama", { ascending: true });
+  const semuaProduk = semuaData || [];
 
   if (ids.length > 0) {
     const { data, error } = await supabase
@@ -67,22 +80,78 @@ export default async function HalamanBandingkan({ searchParams }) {
         </Tombol>
       </div>
 
+      {/* Pesan Peringatan Melebihi 2 Produk (US-37) */}
+      {pesanBatas && (
+        <div className="mb-6 rounded-2xl border border-amber-300 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/30 p-3.5 text-xs font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-2.5">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0 text-amber-600">
+            <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
+          </svg>
+          <span>{pesanBatas}</span>
+        </div>
+      )}
+
+      {/* UI Pemilih 2 Produk Langsung di Halaman (US-37) */}
+      <div className="mb-6 rounded-2xl border border-garis bg-permukaan/50 p-4 sm:p-5">
+        <h2 className="text-sm font-bold text-teks mb-2.5">Pilih 2 Menu untuk Dibandingkan:</h2>
+        <form method="GET" action="/bandingkan" className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="flex-1">
+            <label htmlFor="select-p1" className="sr-only">Menu Pertama</label>
+            <select
+              id="select-p1"
+              name="id1"
+              defaultValue={ids[0] || ""}
+              className="w-full rounded-xl border border-garis bg-latar px-3 py-2 text-xs font-medium text-teks focus:border-utama focus:outline-none"
+              required
+            >
+              <option value="">-- Pilih Menu Pertama --</option>
+              {semuaProduk.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nama} ({formatRupiah(p.harga)})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <span className="text-center font-extrabold text-xs text-teks-lembut sm:px-1">VS</span>
+
+          <div className="flex-1">
+            <label htmlFor="select-p2" className="sr-only">Menu Kedua</label>
+            <select
+              id="select-p2"
+              name="id2"
+              defaultValue={ids[1] || ""}
+              className="w-full rounded-xl border border-garis bg-latar px-3 py-2 text-xs font-medium text-teks focus:border-utama focus:outline-none"
+              required
+            >
+              <option value="">-- Pilih Menu Kedua --</option>
+              {semuaProduk.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nama} ({formatRupiah(p.harga)})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            type="submit"
+            className="rounded-xl bg-utama px-4 py-2 text-xs font-bold text-white hover:bg-utama-gelap transition shadow-xs"
+          >
+            Bandingkan
+          </button>
+        </form>
+      </div>
+
       {produkBandingkan.length < 2 ? (
-        <div className="flex min-h-[35vh] flex-col items-center justify-center rounded-3xl border border-dashed border-garis bg-permukaan/40 p-8 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-utama/10 text-utama mb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-7 w-7">
+        <div className="flex min-h-[30vh] flex-col items-center justify-center rounded-3xl border border-dashed border-garis bg-permukaan/40 p-8 text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-utama/10 text-utama mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-6 w-6">
               <path d="M15.5 2A1.5 1.5 0 0 0 14 3.5v13a1.5 1.5 0 0 0 1.5 1.5h1a1.5 1.5 0 0 0 1.5-1.5v-13A1.5 1.5 0 0 0 16.5 2h-1ZM9.5 6A1.5 1.5 0 0 0 8 7.5v9A1.5 1.5 0 0 0 9.5 18h1a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 10.5 6h-1ZM3.5 10A1.5 1.5 0 0 0 2 11.5v5A1.5 1.5 0 0 0 3.5 18h1A1.5 1.5 0 0 0 6 16.5v-5A1.5 1.5 0 0 0 4.5 10h-1Z" />
             </svg>
           </div>
-          <h2 className="text-base font-bold text-teks">Pilih 2 Menu untuk Dibandingkan</h2>
+          <h2 className="text-base font-bold text-teks">Pilih 2 Menu pada Form di Atas</h2>
           <p className="mt-1 max-w-sm text-xs text-teks-lembut">
-            Silakan tekan tombol perbandingan pada kartu katalog menu untuk membandingkan 2 minuman atau makanan secara langsung.
+            Pilih dua menu pada dropdown di atas atau tekan tombol bandingkan pada kartu katalog menu.
           </p>
-          <div className="mt-5">
-            <Tombol href="/" varian="utama">
-              Buka Katalog Menu
-            </Tombol>
-          </div>
         </div>
       ) : (
         /* Tabel Komparasi Berdampingan 2 Produk (US-37) */

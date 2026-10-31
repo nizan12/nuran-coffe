@@ -1,7 +1,7 @@
 import { buatClientServer } from "@/lib/supabase";
 
 export default async function sitemap() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://nuran-coffee.vercel.app";
+  const baseUrl = process.env.SITE_URL || "https://nuran-coffee.vercel.app";
 
   let ruteProduk = [];
   try {

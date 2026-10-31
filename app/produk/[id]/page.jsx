@@ -138,11 +138,22 @@ export default async function HalamanDetailProduk({ params }) {
   } catch { }
 
   // Mengambil produk terkait dengan kategori yang sama (US-17)
-  const relasiQuery = produk.kategori_id
-    ? supabase.from("produk").select("*, kategori_rel:kategori_id(id, nama, slug)").eq("kategori_id", produk.kategori_id)
-    : supabase.from("produk").select("*, kategori_rel:kategori_id(id, nama, slug)");
+  let relasiQuery = supabase
+    .from("produk")
+    .select("*, kategori_rel:kategori_id(id, nama, slug)");
 
-  const { data: produkTerkaitData } = await relasiQuery.neq("id", id).limit(3);
+  if (produk.kategori_id) {
+    relasiQuery = relasiQuery.eq("kategori_id", produk.kategori_id);
+  } else if (produk.kategori) {
+    relasiQuery = relasiQuery.eq("kategori", produk.kategori);
+  }
+
+  relasiQuery = relasiQuery.neq("id", id);
+  if (nonaktifIds.length > 0) {
+    relasiQuery = relasiQuery.not("id", "in", `(${nonaktifIds.join(",")})`);
+  }
+
+  const { data: produkTerkaitData } = await relasiQuery.limit(3);
 
   const produkTerkait = normalisasiDaftarProduk(produkTerkaitData ?? []);
   const isHabis =
@@ -163,7 +174,7 @@ export default async function HalamanDetailProduk({ params }) {
   const nomorWA = tokoAktif?.nomorWhatsApp || toko.nomorWhatsApp;
   const urlWhatsApp = `https://wa.me/${nomorWA}?text=${encodeURIComponent(pesanWhatsApp)}`;
 
-  // Pecah foto koma jika ada beberapa foto produk (US-18)
+  // Pecah foto koma jika ada beberapa foto produk (US-18: Galeri beberapa foto produk)
   const semuaFoto = [produk.foto_url, produk.image]
     .filter(Boolean)
     .flatMap((f) => (typeof f === "string" ? f.split(",").map((s) => s.trim()) : [f]))
@@ -178,11 +189,15 @@ export default async function HalamanDetailProduk({ params }) {
   return (
     <div className="py-8 md:py-12">
       <article className="grid gap-8 md:grid-cols-2">
-        <GaleriFoto
-          fotoUtama={daftarFotoUnik[0] || "/images/placeholder.svg"}
-          fotoList={daftarFotoUnik}
-          nama={produk.nama}
-        />
+        {/* US-18: Galeri beberapa foto produk */}
+        <section aria-label="Galeri Foto Produk" className="flex flex-col gap-2">
+          <span className="sr-only">Galeri foto produk {produk.nama}</span>
+          <GaleriFoto
+            fotoUtama={daftarFotoUnik[0] || "/images/placeholder.svg"}
+            fotoList={daftarFotoUnik}
+            nama={produk.nama}
+          />
+        </section>
         <div className="flex flex-col gap-4">
           <Link href="/" className="text-sm text-teks-lembut underline underline-offset-4 hover:text-utama">
             Kembali ke katalog
@@ -225,9 +240,9 @@ export default async function HalamanDetailProduk({ params }) {
               </span>
             </div>
 
-            {/* Ikon Aksi Cepat: Bagikan, Favorit, Bandingkan */}
+            {/* Ikon Aksi Cepat: Bagikan, Favorit, Bandingkan (US-23, US-24, US-37) */}
             <div className="flex items-center gap-2">
-              <TombolBagikan namaProduk={produk.nama} ikonOnly />
+              <TombolBagikan namaProduk={produk.nama} />
               <TombolFavorit produk={produk} ikonOnly />
               <TombolBandingkan produk={produk} ikonOnly />
             </div>
@@ -250,9 +265,9 @@ export default async function HalamanDetailProduk({ params }) {
             </p>
             {adaDiskon && (
               <>
-                <span className="text-base text-teks-lembut line-through font-semibold text-red-500">
+                <del className="text-base text-teks-lembut line-through font-semibold text-red-500">
                   {formatRupiah(produk.harga_coret)}
-                </span>
+                </del>
                 <span className="rounded-md bg-red-600 px-2 py-0.5 text-xs font-bold text-white shadow-sm">
                   Hemat {diskonPersen}% (Diskon)
                 </span>
@@ -272,14 +287,29 @@ export default async function HalamanDetailProduk({ params }) {
           </div>
           <p className="max-w-prose leading-relaxed text-teks-lembut">{produk.deskripsi}</p>
 
-          {/* US-03 & US-19: Tombol Pesan via WhatsApp */}
+          {/* US-03, US-12 & US-19: Tombol Pesan via WhatsApp */}
           <div className="flex flex-col gap-3 pt-2">
-            <TombolWhatsApp
-              produk={produk}
-              varianList={varianList}
-              nomorWhatsApp={nomorWA}
-              namaToko={tokoAktif?.nama || toko.nama}
-            />
+            {isHabis ? (
+              <div className="flex flex-col gap-2.5">
+                <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-center text-sm font-semibold text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400">
+                  Maaf, saat ini stok produk ini sedang habis.
+                </div>
+                <button
+                  type="button"
+                  disabled
+                  className="inline-flex w-full cursor-not-allowed items-center justify-center rounded-xl bg-gray-200 dark:bg-neutral-800 px-5 py-3 font-semibold text-gray-400 dark:text-gray-500 opacity-70 sm:w-auto"
+                >
+                  Stok Habis (Pesan via WhatsApp Dinonaktifkan)
+                </button>
+              </div>
+            ) : (
+              <TombolWhatsApp
+                produk={produk}
+                varianList={varianList}
+                nomorWhatsApp={nomorWA}
+                namaToko={tokoAktif?.nama || toko.nama}
+              />
+            )}
             {/* Fallback tanpa JavaScript: link WhatsApp dibuat di server */}
             {!isHabis ? (
               <noscript>

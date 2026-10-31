@@ -72,7 +72,6 @@ export default function HalamanTambahProduk() {
       {/* Form Tambah Produk (US-08, US-14, US-29, US-34) */}
       <form
         action={formAction}
-        encType="multipart/form-data"
         className="flex flex-col gap-5 rounded-3xl border border-garis bg-latar p-6 sm:p-8 shadow-xs"
       >
         {state?.error && !state?.errors && (

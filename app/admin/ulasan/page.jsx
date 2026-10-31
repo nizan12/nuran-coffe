@@ -114,7 +114,19 @@ export default async function HalamanModerasiUlasan() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        {u.status !== "disetujui" && (
+                        {u.status === "disetujui" ? (
+                          <form action={moderasiUlasanAction}>
+                            <input type="hidden" name="id" value={u.id} />
+                            <input type="hidden" name="status" value="sembunyi" />
+                            <button
+                              type="submit"
+                              className="rounded-lg bg-amber-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-amber-700"
+                              title="Sembunyikan dari publik"
+                            >
+                              Sembunyikan
+                            </button>
+                          </form>
+                        ) : (
                           <form action={moderasiUlasanAction}>
                             <input type="hidden" name="id" value={u.id} />
                             <input type="hidden" name="status" value="disetujui" />

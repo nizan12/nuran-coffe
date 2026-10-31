@@ -63,10 +63,19 @@ export default function TombolWhatsApp({ produk, varianList = [], nomorWhatsApp 
   });
 
   function catatKlik() {
-    // US-40: pencatatan analitik tanpa menghalangi pembukaan WhatsApp
+    // US-40: pencatatan analitik async tanpa menghambat buka WhatsApp
     try {
       const data = JSON.stringify({ produkId: produk.id, nama: namaProduk, harga: hargaSatuan, jumlah });
-      navigator.sendBeacon?.("/api/analitik/klik", new Blob([data], { type: "application/json" }));
+      if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+        navigator.sendBeacon("/api/analitik/klik", new Blob([data], { type: "application/json" }));
+      } else if (typeof fetch !== "undefined") {
+        fetch("/api/analitik/klik", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: data,
+          keepalive: true,
+        }).catch(() => {});
+      }
     } catch {}
   }
 

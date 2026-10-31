@@ -108,12 +108,18 @@ export default function KartuProduk({ produk }) {
               {formatRupiah(produk.harga)}
             </span>
             {adaDiskon && (
-              <span className="block truncate text-[10px] text-teks-lembut line-through">
+              <del className="block truncate text-[10px] text-teks-lembut line-through">
                 {formatRupiah(produk.harga_coret)}
-              </span>
+              </del>
             )}
           </div>
-          <TombolKeranjang produk={produk} className="h-8 px-2 sm:px-3 text-xs" />
+          {isHabis ? (
+            <span className="inline-flex items-center justify-center rounded-xl bg-gray-100 dark:bg-neutral-800 text-gray-400 dark:text-gray-500 text-[10px] sm:text-xs font-semibold px-2.5 py-1.5 cursor-not-allowed border border-garis">
+              Habis
+            </span>
+          ) : (
+            <TombolKeranjang produk={produk} className="h-8 px-2 sm:px-3 text-xs" />
+          )}
         </div>
       </div>
     </Link>

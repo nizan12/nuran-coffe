@@ -1,5 +1,5 @@
 export default function robots() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://nuran-coffee.vercel.app";
+  const baseUrl = process.env.SITE_URL || "https://nuran-coffee.vercel.app";
 
   return {
     rules: [

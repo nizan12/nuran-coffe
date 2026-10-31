@@ -286,7 +286,6 @@ export default async function HalamanAdmin({ searchParams }) {
         {/* Form Impor Produk CSV (US-46) */}
         <form
           action={imporProdukCSV}
-          encType="multipart/form-data"
           className="flex flex-wrap items-center gap-2"
         >
           <label className="text-xs font-semibold text-teks-lembut whitespace-nowrap">

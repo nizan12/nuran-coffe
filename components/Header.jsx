@@ -104,7 +104,7 @@ export default function Header({ toko = null, namaToko = null }) {
           </Link>
           <ModalFavorit />
           <KeranjangDrawer toko={toko} />
-          <TombolTema />
+          <TombolToggleTema />
         </nav>
       </div>
     </header>

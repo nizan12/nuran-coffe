@@ -46,6 +46,7 @@ export default function TombolBagikan({ namaProduk, className = "", ikonOnly = f
         aria-label={tersalin ? "Link tersalin" : "Bagikan produk ini"}
         title={tersalin ? "Link tersalin" : "Bagikan / Salin Tautan"}
       >
+        <span className="sr-only">{tersalin ? "Link tersalin" : "Bagikan atau salin link produk"}</span>
         {tersalin ? (
           <svg
             xmlns="http://www.w3.org/2000/svg"

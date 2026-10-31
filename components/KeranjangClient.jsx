@@ -65,21 +65,27 @@ export default function KeranjangClient({ toko = null }) {
     pesan += `\n*Total Belanja:* ${formatRupiah(totalHarga)}`;
     pesan += `\n\nMohon konfirmasi ketersediaan dan cara pembayaran. Terima kasih!`;
 
-    const encoded = encodeURIComponent(pesan);
-    const urlWA = `https://wa.me/${tokoInfo.nomorWhatsApp}?text=${encoded}`;
+    const nomorWA = tokoInfo?.nomorWhatsApp || defaultToko.nomorWhatsApp;
+    const urlWA = `https://wa.me/${nomorWA}?text=${encoded}`;
 
-    // Catat klik analitik pemesanan keranjang (US-40)
+    // Catat klik analitik pemesanan keranjang async non-blocking (US-40)
     try {
-      fetch("/api/analitik/klik", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          produkId: items[0]?.id || 1,
-          nama: `Keranjang (${items.length} menu)`,
-          harga: totalHarga,
-          jumlah: totalItem,
-        }),
+      const payload = JSON.stringify({
+        produkId: items[0]?.id || 1,
+        nama: `Keranjang (${items.length} menu)`,
+        harga: totalHarga,
+        jumlah: totalItem,
       });
+      if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+        navigator.sendBeacon("/api/analitik/klik", new Blob([payload], { type: "application/json" }));
+      } else {
+        fetch("/api/analitik/klik", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: payload,
+          keepalive: true,
+        }).catch(() => {});
+      }
     } catch {}
 
     window.open(urlWA, "_blank", "noopener,noreferrer");
