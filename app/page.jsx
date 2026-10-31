@@ -10,7 +10,8 @@ import { ambilPengaturanPublik } from "@/lib/pengaturanAdmin";
 const PRODUK_PER_HALAMAN = 6;
 
 export default async function HalamanKatalog({ searchParams }) {
-  const { kategori, cari, urutan, halaman } = await searchParams;
+  const sp = (await searchParams) || {};
+  const { kategori, cari, urutan, halaman } = sp;
 
   let daftarProduk = [];
   let semuaProduk = [];
@@ -33,8 +34,8 @@ export default async function HalamanKatalog({ searchParams }) {
     }
 
     semuaProduk = normalisasiDaftarProduk(produkRes.data ?? []);
-    const nonaktifIds = pengaturan.nonaktifIds || [];
-    const urutanIds = pengaturan.urutanIds || [];
+    const nonaktifIds = pengaturan?.nonaktifIds || [];
+    const urutanIds = pengaturan?.urutanIds || [];
 
     // Filter di server: sembunyikan produk nonaktif dari publik (US-32)
     daftarProduk = semuaProduk.filter((p) => !nonaktifIds.includes(p.id));
