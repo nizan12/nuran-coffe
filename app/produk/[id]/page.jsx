@@ -82,8 +82,31 @@ export default async function HalamanDetailProduk({ params }) {
     notFound();
   }
 
-  // Mengambil ulasan yang sudah disetujui (US-38)
-  const ulasanList = await ambilUlasanProduk(id);
+  // Mengambil ulasan yang sudah disetujui & menghitung rata-rata publik (US-38 & US-39)
+  let ulasanList = [];
+  try {
+    const { data: dbUlasan } = await supabase
+      .from("ulasan")
+      .select("*")
+      .eq("produk_id", Number(id) || id)
+      .eq("status", "disetujui")
+      .order("created_at", { ascending: false });
+    if (dbUlasan && dbUlasan.length > 0) {
+      ulasanList = dbUlasan;
+    }
+  } catch {}
+
+  if (ulasanList.length === 0) {
+    ulasanList = await ambilUlasanProduk(id);
+  }
+
+  const rataRataRating =
+    ulasanList.length > 0
+      ? (
+          ulasanList.reduce((sum, u) => sum + (Number(u.rating) || 5), 0) /
+          ulasanList.length
+        ).toFixed(1)
+      : null;
 
   // Mengambil varian produk dari tabel `varian` (US-12 & US-48)
   let varianList = [];
@@ -194,7 +217,17 @@ export default async function HalamanDetailProduk({ params }) {
             </div>
           </div>
 
-          <h1 className="text-3xl font-extrabold leading-tight tracking-tight">{produk.nama}</h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-3xl font-extrabold leading-tight tracking-tight">{produk.nama}</h1>
+            {rataRataRating && (
+              <div className="flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 text-xs font-bold text-amber-600 dark:text-amber-400">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+                  <path fillRule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401Z" clipRule="evenodd" />
+                </svg>
+                <span>⭐ {rataRataRating} / 5 ({ulasanList.length} ulasan disetujui)</span>
+              </div>
+            )}
+          </div>
           <div className="flex flex-wrap items-center gap-3">
             <p className="self-start rounded-md bg-harga-latar px-3 py-1 text-2xl font-bold text-harga">
               {formatRupiah(produk.harga)}
@@ -210,12 +243,12 @@ export default async function HalamanDetailProduk({ params }) {
               </>
             )}
             {/* Badge Baru dan Terlaris berbasis data produk (US-20) */}
-            {(produk.terlaris || Number(produk.id) % 4 === 1) && (
+            {(produk.terlaris === true || produk.is_terlaris === true) && (
               <span className="rounded-md bg-amber-600 px-2.5 py-0.5 text-xs font-bold text-white shadow-xs">
                 Terlaris
               </span>
             )}
-            {(produk.baru || (produk.created_at && Date.now() - new Date(produk.created_at).getTime() < 30 * 24 * 60 * 60 * 1000)) && (
+            {(produk.baru === true || produk.is_baru === true || (produk.created_at && Date.now() - new Date(produk.created_at).getTime() < 30 * 24 * 60 * 60 * 1000)) && (
               <span className="rounded-md bg-emerald-600 px-2.5 py-0.5 text-xs font-bold text-white shadow-xs">
                 Baru
               </span>

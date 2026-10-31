@@ -79,8 +79,10 @@ export default async function HalamanKatalog({ searchParams }) {
     } else if (urutan === "nama-asc" || urutan === "nama") {
       query = query.order("nama", { ascending: true });
     } else {
-      // Default: terbaru
-      query = query.order("created_at", { ascending: false });
+      // US-47: Atur urutan tampil produk langsung via kolom urutan di database
+      query = query
+        .order("urutan", { ascending: true, nullsFirst: false })
+        .order("created_at", { ascending: false });
     }
 
     // US-16: Paginasi langsung di query database dengan .range()

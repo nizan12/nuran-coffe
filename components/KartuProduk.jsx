@@ -15,7 +15,7 @@ export default function KartuProduk({ produk }) {
     ? Math.round((1 - Number(produk.harga) / Number(produk.harga_coret)) * 100)
     : 0;
 
-  // Logika badge Baru dan Terlaris berbasis data produk (US-20)
+  // Logika badge Baru dan Terlaris murni berbasis data produk (US-20)
   const isBaru =
     produk.baru === true ||
     produk.is_baru === true ||
@@ -24,8 +24,7 @@ export default function KartuProduk({ produk }) {
   const isTerlaris =
     produk.terlaris === true ||
     produk.is_terlaris === true ||
-    (produk.klik_count && Number(produk.klik_count) > 3) ||
-    Number(produk.id) % 4 === 1;
+    (produk.klik_count && Number(produk.klik_count) > 3);
 
   return (
     <Link

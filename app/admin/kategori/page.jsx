@@ -120,6 +120,7 @@ export default async function HalamanKelolaKategori() {
                       <form action={ubahKategoriAdmin} className="flex items-center gap-2">
                         <input type="hidden" name="id" value={kat.id || ""} />
                         <input type="hidden" name="namaLama" value={kat.nama} />
+                        <input type="hidden" name="nama_lama" value={kat.nama} />
                         <input
                           type="text"
                           name="namaBaru"

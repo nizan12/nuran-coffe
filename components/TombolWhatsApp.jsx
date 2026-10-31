@@ -171,17 +171,27 @@ export default function TombolWhatsApp({
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => {
+              // US-40: Non-blocking pembuka WhatsApp dan pencatatan analitik
               try {
-                fetch("/api/analitik/klik", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    produkId: produk.id,
-                    nama: namaVarian,
-                    harga: hargaSatuan,
-                    jumlah,
-                  }),
+                const dataKlik = JSON.stringify({
+                  produkId: produk.id,
+                  nama: namaVarian,
+                  harga: hargaSatuan,
+                  jumlah,
                 });
+                if (typeof navigator !== "undefined" && navigator.sendBeacon) {
+                  navigator.sendBeacon(
+                    "/api/analitik/klik",
+                    new Blob([dataKlik], { type: "application/json" })
+                  );
+                } else {
+                  fetch("/api/analitik/klik", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: dataKlik,
+                    keepalive: true,
+                  });
+                }
               } catch {}
             }}
             className="inline-flex flex-1 items-center justify-center rounded-xl bg-utama px-5 py-3 font-semibold text-white hover:bg-utama-gelap shadow-xs transition"

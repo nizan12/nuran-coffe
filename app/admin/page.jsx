@@ -1,9 +1,11 @@
+import Link from "next/link";
 import NavAdmin from "@/components/NavAdmin";
 import TabelProduk from "@/components/TabelProduk";
 import Tombol from "@/components/Tombol";
 import { buatClientServer, normalisasiDaftarProduk } from "@/lib/supabase";
 import { ambilPengaturanAdmin } from "@/lib/pengaturanAdmin";
 import { formatRupiah } from "@/lib/format";
+import { imporProdukCSV, toggleProdukAktif } from "@/app/admin/actions";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -12,12 +14,32 @@ export const metadata = {
   title: "Dashboard & Kelola Produk - Admin",
 };
 
-export default async function HalamanAdmin() {
+export default async function HalamanAdmin({ searchParams }) {
+  const sp = (await searchParams) || {};
+  const cari = sp.cari?.trim() || "";
+  const halaman = Math.max(1, parseInt(sp.halaman, 10) || 1);
+  const PRODUK_PER_HALAMAN = 8;
+  const awal = (halaman - 1) * PRODUK_PER_HALAMAN;
+  const akhir = awal + PRODUK_PER_HALAMAN - 1;
+
   const supabase = buatClientServer();
-  const { data: rawProduk, error } = await supabase
+
+  // US-33: Cari produk dengan query database ilike dan paginasi dengan count exact
+  let query = supabase
     .from("produk")
-    .select("*, kategori_rel:kategori_id(id, nama, slug)")
-    .order("created_at", { ascending: false });
+    .select("*, kategori_rel:kategori_id(id, nama, slug)", { count: "exact" });
+
+  if (cari) {
+    query = query.ilike("nama", `%${cari}%`);
+  }
+
+  const { data: rawProduk, count, error } = await query
+    .order("urutan", { ascending: true, nullsFirst: false })
+    .order("created_at", { ascending: false })
+    .range(awal, akhir);
+
+  const totalAdminProduk = count || 0;
+  const totalAdminHalaman = Math.ceil(totalAdminProduk / PRODUK_PER_HALAMAN) || 1;
 
   const pengaturan = await ambilPengaturanAdmin();
   const nonaktifIds = pengaturan.nonaktifIds || [];
@@ -221,7 +243,7 @@ export default async function HalamanAdmin() {
             Atur katalog, urutan prioritas, dan ekspor/impor data produk tokomu.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Tombol Ekspor CSV (US-35) */}
           <a
             href="/admin/ekspor-csv"
@@ -237,15 +259,95 @@ export default async function HalamanAdmin() {
         </div>
       </div>
 
+      {/* Toolbar: Pencarian Produk (US-33) & Form Impor CSV (US-46) */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl border border-garis bg-permukaan p-4">
+        {/* Form Cari Produk Admin (US-33) */}
+        <form method="GET" action="/admin" className="flex items-center gap-2 flex-1 max-w-sm">
+          <input
+            type="search"
+            name="cari"
+            defaultValue={cari}
+            placeholder="Cari nama produk di database admin…"
+            className="w-full rounded-xl border border-garis bg-latar px-3.5 py-2 text-xs text-teks placeholder:text-teks-lembut focus:border-utama focus:outline-none"
+          />
+          <button
+            type="submit"
+            className="rounded-xl bg-utama px-3.5 py-2 text-xs font-bold text-white hover:bg-utama-gelap transition cursor-pointer"
+          >
+            Cari
+          </button>
+          {cari && (
+            <Link href="/admin" className="text-xs text-red-500 hover:underline">
+              Reset
+            </Link>
+          )}
+        </form>
+
+        {/* Form Impor Produk CSV (US-46) */}
+        <form
+          action={imporProdukCSV}
+          encType="multipart/form-data"
+          className="flex flex-wrap items-center gap-2"
+        >
+          <label className="text-xs font-semibold text-teks-lembut whitespace-nowrap">
+            Impor CSV:
+          </label>
+          <input
+            type="file"
+            name="file_csv"
+            accept=".csv"
+            required
+            className="text-xs text-teks file:mr-2 file:rounded-lg file:border-0 file:bg-utama/10 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-utama hover:file:bg-utama/20"
+          />
+          <button
+            type="submit"
+            className="rounded-lg bg-utama px-3 py-1 text-xs font-bold text-white hover:bg-utama-gelap transition cursor-pointer"
+          >
+            Unggah
+          </button>
+        </form>
+      </div>
+
       {error ? (
         <div className="rounded-xl border border-red-300 bg-red-50 p-6 text-center text-red-700">
           <p className="font-semibold">Gagal memuat produk</p>
           <p className="mt-1 text-sm">{error.message}</p>
         </div>
       ) : daftarProduk.length === 0 ? (
-        <p className="py-12 text-center text-teks-lembut">Belum ada produk di database.</p>
+        <p className="py-12 text-center text-teks-lembut">
+          {cari ? `Tidak ada produk dengan kata kunci "${cari}".` : "Belum ada produk di database."}
+        </p>
       ) : (
-        <TabelProduk daftarProduk={daftarProduk} nonaktifIds={nonaktifIds} />
+        <>
+          <TabelProduk daftarProduk={daftarProduk} nonaktifIds={nonaktifIds} />
+
+          {/* Navigasi Paginasi Admin (US-33) */}
+          {totalAdminHalaman > 1 && (
+            <div className="flex items-center justify-between border-t border-garis pt-4 text-xs text-teks-lembut">
+              <span>
+                Halaman {halaman} dari {totalAdminHalaman} (Total {totalAdminProduk} produk)
+              </span>
+              <div className="flex items-center gap-2">
+                {halaman > 1 && (
+                  <Link
+                    href={`/admin?halaman=${halaman - 1}${cari ? `&cari=${encodeURIComponent(cari)}` : ""}`}
+                    className="rounded-lg border border-garis bg-permukaan px-3 py-1.5 font-semibold text-teks hover:border-utama hover:text-utama"
+                  >
+                    ← Sebelumnya
+                  </Link>
+                )}
+                {halaman < totalAdminHalaman && (
+                  <Link
+                    href={`/admin?halaman=${halaman + 1}${cari ? `&cari=${encodeURIComponent(cari)}` : ""}`}
+                    className="rounded-lg border border-garis bg-permukaan px-3 py-1.5 font-semibold text-teks hover:border-utama hover:text-utama"
+                  >
+                    Selanjutnya →
+                  </Link>
+                )}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

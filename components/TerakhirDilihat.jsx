@@ -2,30 +2,58 @@
 
 import { useEffect, useState } from "react";
 import KartuProduk from "@/components/KartuProduk";
-import { ambilTerakhirDilihat, catatProdukDilihat } from "@/lib/terakhirDilihat";
+
+const STORAGE_KEY = "nuran_terakhir_dilihat_v1";
+const BATAS_JUMLAH = 6; // Batas jumlah produk terakhir dilihat (US-36)
 
 export default function TerakhirDilihat({ produkSaatIni = null }) {
   const [daftar, setDaftar] = useState([]);
 
   useEffect(() => {
-    // Jika berada di halaman detail produk, catat produk saat ini
-    if (produkSaatIni) {
-      catatProdukDilihat(produkSaatIni);
+    if (typeof window === "undefined") return;
+
+    // 1. Simpan produk saat ini ke localStorage (US-36)
+    if (produkSaatIni && produkSaatIni.id) {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const list = raw ? JSON.parse(raw) : [];
+        const filtered = list.filter((item) => String(item.id) !== String(produkSaatIni.id));
+        const updated = [
+          {
+            id: produkSaatIni.id,
+            nama: produkSaatIni.nama,
+            harga: Number(produkSaatIni.harga) || 0,
+            image: produkSaatIni.image || produkSaatIni.foto_url || "/produk/kopi.svg",
+            kategori: produkSaatIni.kategori || "",
+            harga_coret: produkSaatIni.harga_coret || null,
+            stok: produkSaatIni.stok,
+          },
+          ...filtered,
+        ].slice(0, BATAS_JUMLAH);
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      } catch (err) {
+        console.error("Gagal simpan ke localStorage:", err);
+      }
     }
 
-    setDaftar(ambilTerakhirDilihat(produkSaatIni?.id));
-
-    function handleUpdate() {
-      setDaftar(ambilTerakhirDilihat(produkSaatIni?.id));
+    // 2. Ambil dari localStorage tanpa produk saat ini
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const list = raw ? JSON.parse(raw) : [];
+      const hasil = produkSaatIni?.id
+        ? list.filter((item) => String(item.id) !== String(produkSaatIni.id))
+        : list;
+      setDaftar(hasil.slice(0, BATAS_JUMLAH));
+    } catch {
+      setDaftar([]);
     }
-
-    window.addEventListener("terakhir-dilihat-updated", handleUpdate);
-    return () => {
-      window.removeEventListener("terakhir-dilihat-updated", handleUpdate);
-    };
   }, [produkSaatIni?.id]);
 
-  if (daftar.length === 0) return null;
+  // 3. Sembunyikan bagian ini jika riwayat kosong (US-36)
+  if (daftar.length === 0) {
+    return null;
+  }
 
   return (
     <section aria-labelledby="judul-terakhir-dilihat" className="mt-12 border-t border-garis pt-8">
@@ -51,10 +79,11 @@ export default function TerakhirDilihat({ produkSaatIni = null }) {
             Terakhir Dilihat
           </h2>
         </div>
-        <span className="text-xs text-teks-lembut">Riwayat tersimpan di browser</span>
+        <span className="text-xs text-teks-lembut">Riwayat tersimpan di browser (Maks. {BATAS_JUMLAH})</span>
       </div>
+
       <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-3">
-        {daftar.slice(0, 3).map((item) => (
+        {daftar.slice(0, BATAS_JUMLAH).map((item) => (
           <KartuProduk key={item.id} produk={item} />
         ))}
       </div>

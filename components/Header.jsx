@@ -5,6 +5,7 @@ import Link from "next/link";
 import { toko } from "@/lib/toko";
 import KeranjangDrawer from "@/components/KeranjangDrawer";
 import ModalFavorit from "@/components/ModalFavorit";
+import TombolTema from "@/components/TombolTema";
 
 // US-25: Mode gelap dengan switch tema dan penyimpanan preferensi di localStorage
 function TombolToggleTema() {
@@ -40,9 +41,10 @@ function TombolToggleTema() {
       type="button"
       onClick={handleToggleTema}
       className="flex h-9 w-9 items-center justify-center rounded-xl border border-garis bg-permukaan text-teks transition-all hover:border-utama hover:text-utama hover:scale-105 cursor-pointer"
-      aria-label={isDark ? "Beralih ke mode terang" : "Beralih ke mode gelap"}
-      title={isDark ? "Beralih ke Mode Terang" : "Beralih ke Mode Gelap"}
+      aria-label="Tombol toggle terang/gelap"
+      title="Tombol toggle terang/gelap (Mode Gelap)"
     >
+      <span className="sr-only">Tombol toggle terang/gelap</span>
       {isDark ? (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -91,12 +93,18 @@ export default function Header({ namaToko = null }) {
           <Link href="/" className="text-teks hover:text-utama hidden xs:inline">
             Katalog
           </Link>
+          <Link href="/favorit" className="text-teks-lembut hover:text-utama hidden sm:inline">
+            Favorit
+          </Link>
+          <Link href="/keranjang" className="text-teks-lembut hover:text-utama hidden sm:inline">
+            Keranjang
+          </Link>
           <Link href="/tentang" className="text-teks-lembut hover:text-utama hidden sm:inline">
             Tentang Toko
           </Link>
           <ModalFavorit />
           <KeranjangDrawer />
-          <TombolToggleTema />
+          <TombolTema />
         </nav>
       </div>
     </header>

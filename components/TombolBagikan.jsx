@@ -43,8 +43,8 @@ export default function TombolBagikan({ namaProduk, className = "", ikonOnly = f
             ? "border-green-500 bg-green-50 text-green-600 dark:bg-green-950/40"
             : "text-teks-lembut hover:text-utama"
         } ${className}`}
-        aria-label={tersalin ? "Tautan berhasil disalin" : "Bagikan produk ini"}
-        title={tersalin ? "Tautan Berhasil Disalin!" : "Bagikan / Salin Tautan"}
+        aria-label={tersalin ? "Link tersalin" : "Bagikan produk ini"}
+        title={tersalin ? "Link tersalin" : "Bagikan / Salin Tautan"}
       >
         {tersalin ? (
           <svg
@@ -119,7 +119,7 @@ export default function TombolBagikan({ namaProduk, className = "", ikonOnly = f
           />
         </svg>
       )}
-      <span>{tersalin ? "Tautan Berhasil Disalin!" : "Bagikan / Salin Link"}</span>
+      <span>{tersalin ? "Link tersalin" : "Bagikan / Salin Link"}</span>
     </button>
   );
 }
