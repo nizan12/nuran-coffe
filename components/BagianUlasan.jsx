@@ -122,6 +122,15 @@ export default function BagianUlasan({ produkId, ulasanAwal = [] }) {
 
           <input type="hidden" name="produkId" value={produkId} />
           <input type="hidden" name="rating" value={ratingInput} />
+          {/* Honeypot anti-spam US-38 */}
+          <input
+            type="text"
+            name="website"
+            tabIndex={-1}
+            autoComplete="off"
+            className="hidden"
+            aria-hidden="true"
+          />
 
           <div className="flex flex-col gap-3.5">
             <div>
@@ -139,6 +148,7 @@ export default function BagianUlasan({ produkId, ulasanAwal = [] }) {
                 id="nama-pengulas"
                 type="text"
                 name="nama"
+                maxLength={60}
                 placeholder="Contoh: Rian"
                 required
                 className="w-full rounded-xl border border-garis bg-latar px-3.5 py-2 text-xs text-teks placeholder:text-teks-lembut focus:border-utama focus:outline-none"
@@ -147,12 +157,13 @@ export default function BagianUlasan({ produkId, ulasanAwal = [] }) {
 
             <div>
               <label htmlFor="komentar-pengulas" className="block text-xs font-semibold text-teks mb-1">
-                Ulasan / Komentar:
+                Ulasan / Komentar (Maks. 500 karakter):
               </label>
               <textarea
                 id="komentar-pengulas"
                 name="komentar"
                 rows={3}
+                maxLength={500}
                 placeholder="Ceritakan rasa, aroma, atau kesegaran kopi ini…"
                 required
                 className="w-full rounded-xl border border-garis bg-latar px-3.5 py-2 text-xs text-teks placeholder:text-teks-lembut focus:border-utama focus:outline-none"

@@ -115,21 +115,31 @@ export async function tambahProduk(prevState, formData) {
   const kategori = formData.get("kategori")?.trim() || null;
   const deskripsi = formData.get("deskripsi")?.trim() || null;
 
-  // Validasi form server ketat (US-34)
+  // Validasi form server ketat per field (US-34)
+  const errors = {};
   if (!nama || nama.length < 3) {
-    return { error: "Nama produk wajib diisi minimal 3 karakter." };
+    errors.nama = "Nama produk wajib diisi minimal 3 karakter.";
+  } else if (nama.length > 100) {
+    errors.nama = "Nama produk maksimal 100 karakter.";
   }
-  if (nama.length > 100) {
-    return { error: "Nama produk maksimal 100 karakter." };
-  }
+
   if (isNaN(harga) || harga < 100) {
-    return { error: "Harga minimal Rp 100." };
+    errors.harga = "Harga minimal Rp 100.";
+  } else if (harga > 100000000) {
+    errors.harga = "Harga maksimal Rp 100.000.000.";
   }
-  if (harga > 100000000) {
-    return { error: "Harga maksimal Rp 100.000.000." };
-  }
+
   if (deskripsi && deskripsi.length > 1000) {
-    return { error: "Deskripsi maksimal 1000 karakter." };
+    errors.deskripsi = "Deskripsi maksimal 1000 karakter.";
+  }
+
+  if (Object.keys(errors).length > 0) {
+    return {
+      error: Object.values(errors)[0],
+      errors,
+      fieldErrors: errors,
+      values: { nama, harga, kategori, deskripsi },
+    };
   }
 
   const inputUrl = formData.get("foto_url");
@@ -276,21 +286,31 @@ export async function ubahProduk(prevState, formData) {
     return { error: "ID produk tidak ditemukan." };
   }
 
-  // Validasi form server ketat (US-34)
+  // Validasi form server ketat per field (US-34)
+  const errors = {};
   if (!nama || nama.length < 3) {
-    return { error: "Nama produk wajib diisi minimal 3 karakter." };
+    errors.nama = "Nama produk wajib diisi minimal 3 karakter.";
+  } else if (nama.length > 100) {
+    errors.nama = "Nama produk maksimal 100 karakter.";
   }
-  if (nama.length > 100) {
-    return { error: "Nama produk maksimal 100 karakter." };
-  }
+
   if (isNaN(harga) || harga < 100) {
-    return { error: "Harga minimal Rp 100." };
+    errors.harga = "Harga minimal Rp 100.";
+  } else if (harga > 100000000) {
+    errors.harga = "Harga maksimal Rp 100.000.000.";
   }
-  if (harga > 100000000) {
-    return { error: "Harga maksimal Rp 100.000.000." };
-  }
+
   if (deskripsi && deskripsi.length > 1000) {
-    return { error: "Deskripsi maksimal 1000 karakter." };
+    errors.deskripsi = "Deskripsi maksimal 1000 karakter.";
+  }
+
+  if (Object.keys(errors).length > 0) {
+    return {
+      error: Object.values(errors)[0],
+      errors,
+      fieldErrors: errors,
+      values: { nama, harga, kategori, deskripsi },
+    };
   }
 
   const dataUpdate = {
@@ -687,9 +707,24 @@ export async function simpanUrutanProduk(urutanIds) {
     return { error: "Format data urutan salah." };
   }
 
+  const supabaseServer = buatClientServer();
+
+  // US-47: Simpan urutan langsung ke kolom `urutan` di tabel produk Supabase
+  try {
+    for (let index = 0; index < urutanIds.length; index++) {
+      const id = urutanIds[index];
+      await supabaseServer
+        .from("produk")
+        .update({ urutan: index + 1 })
+        .eq("id", Number(id));
+    }
+  } catch (err) {
+    console.error("Gagal mengupdate kolom urutan produk:", err);
+  }
+
   const pengaturan = await ambilPengaturanAdmin();
   await simpanPengaturanAdmin({ ...pengaturan, urutanIds });
-  await catatLogAktivitas("Atur Urutan Produk", "Memperbarui urutan prioritas produk di katalog.");
+  await catatLogAktivitas("Atur Urutan Produk", `Memperbarui kolom urutan pada tabel produk (${urutanIds.length} item).`);
 
   revalidatePath("/admin");
   revalidatePath("/");
@@ -749,6 +784,52 @@ export async function tambahKategoriAdmin(arg1, arg2) {
   return { sukses: "Kategori baru berhasil ditambahkan." };
 }
 
+export async function ubahKategoriAdmin(formData) {
+  const supabase = await buatClientSesi();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    redirect("/admin/login");
+  }
+
+  const id = formData.get("id");
+  const namaBaru = formData.get("nama")?.trim();
+
+  if (!id || !namaBaru || namaBaru.length < 2) {
+    return { error: "Nama kategori baru minimal 2 karakter." };
+  }
+
+  const slug = namaBaru
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+
+  const supabaseServer = buatClientServer();
+  const { error } = await supabaseServer
+    .from("kategori")
+    .update({ nama: namaBaru, slug })
+    .eq("id", Number(id));
+
+  if (error) {
+    return { error: "Gagal mengubah kategori: " + error.message };
+  }
+
+  // Sinkronisasi ke pengaturan
+  const pengaturan = await ambilPengaturanAdmin();
+  const oldKat = formData.get("nama_lama")?.trim();
+  const kategoriList = (pengaturan.kategoriList || []).map((k) =>
+    k === oldKat ? namaBaru : k
+  );
+  await simpanPengaturanAdmin({ ...pengaturan, kategoriList });
+
+  await catatLogAktivitas("Ubah Kategori", `Mengubah nama kategori menjadi "${namaBaru}"`);
+  revalidatePath("/admin/kategori");
+  revalidatePath("/admin");
+  revalidatePath("/");
+  return { sukses: "Kategori berhasil diperbarui." };
+}
+
 export async function hapusKategoriAdmin(formData) {
   const supabase = await buatClientSesi();
   const {
@@ -762,15 +843,40 @@ export async function hapusKategoriAdmin(formData) {
   const idKategori = formData.get("id");
   if (!namaKategori && !idKategori) return;
 
+  const supabaseServer = buatClientServer();
+
+  // US-31: Cek relasi - Kategori tidak boleh dihapus jika masih digunakan oleh produk
+  let idCek = idKategori ? Number(idKategori) : null;
+  if (!idCek && namaKategori) {
+    const { data: katData } = await supabaseServer
+      .from("kategori")
+      .select("id")
+      .ilike("nama", namaKategori)
+      .maybeSingle();
+    if (katData?.id) idCek = katData.id;
+  }
+
+  if (idCek) {
+    const { data: produkTerkait, count } = await supabaseServer
+      .from("produk")
+      .select("id", { count: "exact" })
+      .eq("kategori_id", idCek);
+
+    if ((count && count > 0) || (produkTerkait && produkTerkait.length > 0)) {
+      return {
+        error: `Kategori tidak dapat dihapus karena masih digunakan oleh ${count || produkTerkait.length} produk menu.`,
+      };
+    }
+  }
+
   const pengaturan = await ambilPengaturanAdmin();
   const kategoriList = (pengaturan.kategoriList || []).filter((k) => k !== namaKategori);
   await simpanPengaturanAdmin({ ...pengaturan, kategoriList });
 
-  // Hapus juga dari tabel kategori Supabase
+  // Hapus dari tabel kategori Supabase
   try {
-    const supabaseServer = buatClientServer();
-    if (idKategori) {
-      await supabaseServer.from("kategori").delete().eq("id", idKategori);
+    if (idCek) {
+      await supabaseServer.from("kategori").delete().eq("id", idCek);
     } else if (namaKategori) {
       await supabaseServer.from("kategori").delete().eq("nama", namaKategori);
     }
@@ -780,6 +886,7 @@ export async function hapusKategoriAdmin(formData) {
 
   revalidatePath("/admin");
   revalidatePath("/admin/kategori");
+  return { sukses: "Kategori berhasil dihapus." };
 }
 
 export async function imporProdukCSV(arg1, arg2) {
@@ -818,10 +925,16 @@ export async function imporProdukCSV(arg1, arg2) {
     }
 
     const rowsToInsert = [];
+    const barisGagal = [];
+
     for (let i = 1; i < lines.length; i++) {
+      const nomorBaris = i + 1; // Baris 1 adalah header CSV
       const line = lines[i];
       const cols = line.split(",").map((c) => c.replace(/^"|"$/g, "").trim());
-      if (cols.length < 2) continue;
+      if (cols.length < 2) {
+        barisGagal.push({ baris: nomorBaris, alasan: `Baris ${nomorBaris}: Jumlah kolom kurang` });
+        continue;
+      }
 
       const nama = cols[1] || cols[0];
       const harga = parseInt(cols[3] || cols[1] || "0", 10);
@@ -829,31 +942,65 @@ export async function imporProdukCSV(arg1, arg2) {
       const deskripsi = cols[4] || null;
       const foto_url = cols[5] || "/images/placeholder.svg";
 
-      if (nama && !isNaN(harga) && harga >= 0) {
-        rowsToInsert.push({
-          nama,
-          harga,
-          kategori,
-          deskripsi,
-          foto_url,
-          image: foto_url,
-        });
+      if (!nama || nama.length < 2) {
+        barisGagal.push({ baris: nomorBaris, alasan: `Baris ${nomorBaris}: Nama produk kosong atau terlalu pendek` });
+        continue;
       }
+
+      if (isNaN(harga) || harga < 0) {
+        barisGagal.push({ baris: nomorBaris, alasan: `Baris ${nomorBaris}: Format harga tidak valid` });
+        continue;
+      }
+
+      rowsToInsert.push({
+        nama,
+        harga,
+        kategori,
+        deskripsi,
+        foto_url,
+        image: foto_url,
+      });
     }
 
-    if (rowsToInsert.length === 0) {
-      return { error: "Tidak ada baris produk valid yang dapat diimpor dari file ini." };
+    const totalBerhasil = rowsToInsert.length;
+    const totalGagal = barisGagal.length;
+
+    if (totalBerhasil === 0 && totalGagal > 0) {
+      const daftarNomor = barisGagal.map((b) => b.baris).join(", ");
+      return {
+        error: `Semua ${totalGagal} baris gagal diimpor (Baris salah: ${daftarNomor}).`,
+        ringkasan: { berhasil: 0, gagal: totalGagal, barisGagal: barisGagal.map((b) => b.baris) },
+      };
     }
 
-    const { error: insertError } = await supabase.from("produk").insert(rowsToInsert);
-    if (insertError) {
-      return { error: "Gagal menyimpan produk: " + insertError.message };
+    if (totalBerhasil > 0) {
+      const { error: insertError } = await supabase.from("produk").insert(rowsToInsert);
+      if (insertError) {
+        return { error: "Gagal menyimpan produk: " + insertError.message };
+      }
+
+      await catatLogAktivitas(
+        "Impor Produk CSV",
+        `Impor selesai: ${totalBerhasil} berhasil, ${totalGagal} baris gagal.`
+      );
+      revalidatePath("/admin");
+      revalidatePath("/");
     }
 
-    await catatLogAktivitas("Impor Produk CSV", `Berhasil memasukkan ${rowsToInsert.length} produk sekaligus.`);
-    revalidatePath("/admin");
-    revalidatePath("/");
-    return { sukses: `Berhasil mengimpor ${rowsToInsert.length} produk!` };
+    const daftarNomorBarisGagal = barisGagal.map((b) => b.baris);
+    const ringkasanPesan = `Ringkasan impor: Berhasil ${totalBerhasil} produk, Gagal ${totalGagal} baris${
+      totalGagal > 0 ? ` (Nomor baris salah: ${daftarNomorBarisGagal.join(", ")})` : ""
+    }.`;
+
+    return {
+      sukses: ringkasanPesan,
+      ringkasan: {
+        berhasil: totalBerhasil,
+        gagal: totalGagal,
+        barisGagal: daftarNomorBarisGagal,
+        rincianGagal: barisGagal,
+      },
+    };
   } catch (err) {
     return { error: "Gagal memproses file CSV: " + err.message };
   }
@@ -1007,21 +1154,50 @@ export async function kosongkanLogAktivitas() {
  * US-38: Kirim ulasan dan rating produk dari pengunjung
  */
 export async function kirimUlasanAction(prevState, formData) {
+  // 1. Proteksi Honeypot anti-bot
+  const website = formData.get("website");
+  if (website) {
+    return { error: "Spam bot terdeteksi." };
+  }
+
   const produkId = formData.get("produkId");
   const nama = formData.get("nama")?.trim();
   const rating = parseInt(formData.get("rating") || "5", 10);
   const komentar = formData.get("komentar")?.trim();
 
+  // 2. Validasi input & batas panjang (maxlength)
   if (!produkId) {
     return { error: "ID produk tidak valid." };
   }
-  if (!nama || nama.length < 2) {
-    return { error: "Nama pengulas minimal 2 karakter." };
+  if (!nama || nama.length < 2 || nama.length > 60) {
+    return { error: "Nama pengulas harus antara 2 hingga 60 karakter." };
+  }
+  if (isNaN(rating) || rating < 1 || rating > 5) {
+    return { error: "Rating harus berupa angka 1 sampai 5." };
   }
   if (!komentar || komentar.length < 3) {
     return { error: "Tulis ulasan Anda minimal 3 karakter." };
   }
+  if (komentar.length > 500) {
+    return { error: "Ulasan maksimal 500 karakter." };
+  }
 
+  // 3. Simpan langsung ke tabel Supabase `ulasan`
+  const supabaseServer = buatClientServer();
+  try {
+    await supabaseServer.from("ulasan").insert({
+      produk_id: Number(produkId) || produkId,
+      nama,
+      rating,
+      komentar,
+      status: "menunggu",
+      created_at: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.error("Gagal insert ke tabel ulasan DB:", err);
+  }
+
+  // Fallback / sync ke pengaturan admin
   const { tambahUlasanProduk } = await import("@/lib/pengaturanAdmin");
   await tambahUlasanProduk({
     produkId,
@@ -1032,7 +1208,7 @@ export async function kirimUlasanAction(prevState, formData) {
 
   revalidatePath(`/produk/${produkId}`);
   revalidatePath("/admin/ulasan");
-  return { sukses: "Terima kasih! Ulasan dan rating Anda berhasil dikirim." };
+  return { sukses: "Terima kasih! Ulasan dan rating Anda berhasil dikirim dan menunggu moderasi admin." };
 }
 
 /**
@@ -1051,6 +1227,11 @@ export async function moderasiUlasanAction(formData) {
   const statusBaru = formData.get("status");
   if (!id || !statusBaru) return;
 
+  const supabaseServer = buatClientServer();
+  try {
+    await supabaseServer.from("ulasan").update({ status: statusBaru }).eq("id", id);
+  } catch {}
+
   const { ubahStatusUlasan, catatLogAktivitas } = await import("@/lib/pengaturanAdmin");
   await ubahStatusUlasan(id, statusBaru);
   await catatLogAktivitas("Moderasi Ulasan", `Ulasan ID #${id} diubah statusnya menjadi ${statusBaru}`);
@@ -1068,6 +1249,11 @@ export async function hapusUlasanAction(formData) {
 
   const id = formData.get("id");
   if (!id) return;
+
+  const supabaseServer = buatClientServer();
+  try {
+    await supabaseServer.from("ulasan").delete().eq("id", id);
+  } catch {}
 
   const { hapusUlasanAdmin, catatLogAktivitas } = await import("@/lib/pengaturanAdmin");
   await hapusUlasanAdmin(id);
@@ -1093,7 +1279,7 @@ export async function tambahBannerAdmin(arg1, arg2) {
     data: { user },
   } = await supabaseSesi.auth.getUser();
   if (!user) {
-    return { error: "Sesi login telah berakhir." };
+    redirect("/admin/login");
   }
 
   const judul = formData.get("judul")?.trim();
@@ -1102,6 +1288,7 @@ export async function tambahBannerAdmin(arg1, arg2) {
   const badge = formData.get("badge")?.trim() || "PROMO SPESIAL";
   const tombol_teks = formData.get("tombol_teks")?.trim() || "Pesan via WhatsApp";
   const link_url = formData.get("link_url")?.trim() || "/";
+  const foto_url = formData.get("foto_url")?.trim() || null;
   const tipe = formData.get("tipe")?.trim() || "coffee";
   const bg_gradient = formData.get("bg_gradient")?.trim() || "from-emerald-950 via-utama-gelap to-utama";
   const is_external = formData.get("is_external") === "true" || link_url.startsWith("http");
@@ -1118,6 +1305,7 @@ export async function tambahBannerAdmin(arg1, arg2) {
     badge,
     tombol_teks,
     link_url,
+    foto_url,
     tipe,
     bg_gradient,
     is_external,
@@ -1133,6 +1321,48 @@ export async function tambahBannerAdmin(arg1, arg2) {
   revalidatePath("/");
   revalidatePath("/admin/banner");
   return { sukses: "Banner promo baru berhasil ditambahkan!" };
+}
+
+export async function ubahBannerAdmin(formData) {
+  const supabaseSesi = await buatClientSesi();
+  const {
+    data: { user },
+  } = await supabaseSesi.auth.getUser();
+  if (!user) {
+    redirect("/admin/login");
+  }
+
+  const id = formData.get("id");
+  if (!id) return { error: "ID banner tidak valid." };
+
+  const judul = formData.get("judul")?.trim();
+  const subjudul = formData.get("subjudul")?.trim() || null;
+  const deskripsi = formData.get("deskripsi")?.trim() || null;
+  const badge = formData.get("badge")?.trim() || "PROMO";
+  const tombol_teks = formData.get("tombol_teks")?.trim() || "Pesan via WhatsApp";
+  const link_url = formData.get("link_url")?.trim() || "/";
+  const foto_url = formData.get("foto_url")?.trim() || null;
+  const bg_gradient = formData.get("bg_gradient")?.trim() || "from-emerald-950 via-utama-gelap to-utama";
+
+  const supabaseServer = buatClientServer();
+  await supabaseServer
+    .from("banner")
+    .update({
+      judul,
+      subjudul,
+      deskripsi,
+      badge,
+      tombol_teks,
+      link_url,
+      foto_url,
+      bg_gradient,
+    })
+    .eq("id", Number(id));
+
+  await catatLogAktivitas("Ubah Banner", `Mengubah banner promo "${judul}" (#${id})`);
+  revalidatePath("/");
+  revalidatePath("/admin/banner");
+  return { sukses: "Banner promo berhasil diperbarui!" };
 }
 
 export async function toggleStatusBannerAdmin(formData) {

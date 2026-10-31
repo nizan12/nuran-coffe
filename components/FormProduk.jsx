@@ -245,7 +245,11 @@ export default function FormProduk({
   }
 
   return (
-    <form action={formAction} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start w-full">
+    <form
+      action={formAction}
+      encType="multipart/form-data"
+      className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start w-full"
+    >
       {produk.id && <input type="hidden" name="id" value={produk.id} />}
       {/* Hidden input yang memuat seluruh foto terupdate */}
       <input type="hidden" name="foto_url" value={daftarFoto.join(", ")} />
@@ -278,6 +282,11 @@ export default function FormProduk({
             placeholder="Contoh: Es Kopi Susu Gula Aren"
             required
           />
+          {(state?.errors?.nama || state?.fieldErrors?.nama) && (
+            <p className="text-xs text-red-500 font-medium -mt-2">
+              {state?.errors?.nama || state?.fieldErrors?.nama}
+            </p>
+          )}
 
           {/* Pemilih Kategori Menu dengan Quick Chips & Datalist */}
           <div className="flex flex-col gap-1.5">
@@ -358,6 +367,11 @@ export default function FormProduk({
                 required
                 className="w-full h-11 rounded-xl border border-garis bg-latar px-3.5 text-sm text-teks focus:border-utama focus:outline-none"
               />
+              {(state?.errors?.harga || state?.fieldErrors?.harga) && (
+                <p className="text-xs text-red-500 font-medium">
+                  {state?.errors?.harga || state?.fieldErrors?.harga}
+                </p>
+              )}
               <div className="text-[11px] text-teks-lembut min-h-[16px] truncate">
                 {harga && Number(harga) > 0 ? (
                   <span>Harga tayang: <strong className="text-teks font-semibold">Rp {Number(harga).toLocaleString("id-ID")}</strong></span>
@@ -625,6 +639,11 @@ export default function FormProduk({
             placeholder="Tuliskan cerita menarik tentang menu kopi ini atau gunakan tombol 'Buat dengan AI' di atas..."
             className="w-full rounded-2xl border border-garis bg-latar p-3.5 text-sm text-teks placeholder:text-teks-lembut focus:border-utama focus:outline-none leading-relaxed"
           />
+          {(state?.errors?.deskripsi || state?.fieldErrors?.deskripsi) && (
+            <p className="text-xs text-red-500 font-medium -mt-1">
+              {state?.errors?.deskripsi || state?.fieldErrors?.deskripsi}
+            </p>
+          )}
 
           <div className="flex items-center justify-between text-[11px] text-teks-lembut">
             <span>Maksimal 1000 karakter</span>
@@ -792,6 +811,7 @@ export default function FormProduk({
               <input
                 ref={fileInputRef}
                 type="file"
+                name="file_gambar"
                 accept="image/*"
                 disabled={loadingUpload}
                 onChange={handleUploadFile}

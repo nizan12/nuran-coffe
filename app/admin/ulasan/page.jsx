@@ -1,5 +1,6 @@
 import Link from "next/link";
 import NavAdmin from "@/components/NavAdmin";
+import { buatClientServer } from "@/lib/supabase";
 import { ambilPengaturanAdmin } from "@/lib/pengaturanAdmin";
 import { moderasiUlasanAction, hapusUlasanAction } from "@/app/admin/actions";
 import TombolHapusKonfirmasi from "@/components/TombolHapusKonfirmasi";
@@ -12,8 +13,32 @@ export const metadata = {
 };
 
 export default async function HalamanModerasiUlasan() {
-  const config = await ambilPengaturanAdmin();
-  const ulasanList = Array.isArray(config.ulasanList) ? config.ulasanList : [];
+  const supabase = buatClientServer();
+  let ulasanList = [];
+  try {
+    const { data: dbUlasan } = await supabase
+      .from("ulasan")
+      .select("*, produk(nama)")
+      .order("created_at", { ascending: false });
+
+    if (dbUlasan && dbUlasan.length > 0) {
+      ulasanList = dbUlasan.map((u) => ({
+        id: u.id,
+        produkId: u.produk_id,
+        namaProduk: u.produk?.nama,
+        nama: u.nama,
+        rating: u.rating,
+        komentar: u.komentar,
+        status: u.status || "menunggu",
+        createdAt: u.created_at,
+      }));
+    }
+  } catch {}
+
+  if (ulasanList.length === 0) {
+    const config = await ambilPengaturanAdmin();
+    ulasanList = Array.isArray(config.ulasanList) ? config.ulasanList : [];
+  }
 
   return (
     <div className="flex flex-col gap-6 py-8">

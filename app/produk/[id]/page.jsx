@@ -8,10 +8,11 @@ import TerakhirDilihat from "@/components/TerakhirDilihat";
 import GaleriFoto from "@/components/GaleriFoto";
 import KartuProduk from "@/components/KartuProduk";
 import BagianUlasan from "@/components/BagianUlasan";
+import KotakTanyaProdukAI from "@/components/KotakTanyaProdukAI";
 import { buatClientServer, normalisasiProduk, normalisasiDaftarProduk } from "@/lib/supabase";
 import { formatRupiah } from "@/lib/format";
 import { toko } from "@/lib/toko";
-import { ambilUlasanProduk } from "@/lib/pengaturanAdmin";
+import { ambilUlasanProduk, ambilPengaturanPublik } from "@/lib/pengaturanAdmin";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -19,15 +20,19 @@ export const revalidate = 0;
 export async function generateMetadata({ params }) {
   const { id } = await params;
   const supabase = buatClientServer();
-  const { data: rawProduk } = await supabase
-    .from("produk")
-    .select("*, kategori_rel:kategori_id(id, nama, slug)")
-    .eq("id", id)
-    .single();
+  const [pengaturan, { data: rawProduk }] = await Promise.all([
+    ambilPengaturanPublik(),
+    supabase
+      .from("produk")
+      .select("*, kategori_rel:kategori_id(id, nama, slug)")
+      .eq("id", id)
+      .single(),
+  ]);
 
+  const nonaktifIds = pengaturan?.nonaktifIds || [];
   const produk = normalisasiProduk(rawProduk);
 
-  if (!produk) {
+  if (!produk || nonaktifIds.includes(Number(id)) || produk.aktif === false) {
     return {
       title: "Produk Tidak Ditemukan",
     };
@@ -60,16 +65,20 @@ export async function generateMetadata({ params }) {
 export default async function HalamanDetailProduk({ params }) {
   const { id } = await params;
   const supabase = buatClientServer();
+  const [pengaturan, { data: rawProduk, error }] = await Promise.all([
+    ambilPengaturanPublik(),
+    supabase
+      .from("produk")
+      .select("*, kategori_rel:kategori_id(id, nama, slug)")
+      .eq("id", id)
+      .single(),
+  ]);
 
-  const { data: rawProduk, error } = await supabase
-    .from("produk")
-    .select("*, kategori_rel:kategori_id(id, nama, slug)")
-    .eq("id", id)
-    .single();
-
+  const nonaktifIds = pengaturan?.nonaktifIds || [];
   const produk = normalisasiProduk(rawProduk);
 
-  if (error || !produk) {
+  // Filter produk nonaktif: jika produk nonaktif atau disembunyikan admin, return notFound() 404 (US-32)
+  if (error || !produk || nonaktifIds.includes(Number(id)) || produk.aktif === false) {
     notFound();
   }
 
@@ -107,27 +116,48 @@ export default async function HalamanDetailProduk({ params }) {
     ? Math.round((1 - Number(produk.harga) / Number(produk.harga_coret)) * 100)
     : 0;
 
-  // US-03: Pesan via WhatsApp
-  // Kriteria: Membuka WhatsApp ke nomor di lib/toko.js dengan pesan otomatis berisi nama dan harga produk
-  const pesanWhatsApp = `Halo, saya ingin memesan:\n\n*${produk.nama}*\nHarga: ${formatRupiah(produk.harga)}\n\nTerima kasih!`;
-  const urlWhatsApp = `https://wa.me/${toko.nomorWhatsApp}?text=${encodeURIComponent(pesanWhatsApp)}`;
+  // US-03, US-12 & US-48: Pesan via WhatsApp dengan nama, varian, harga, dan jumlah
+  const namaVarianDefault = varianList && varianList.length > 0 ? varianList[0].nama : "Regular";
+  const tambahanHargaDefault = varianList && varianList.length > 0 ? (Number(varianList[0].harga_tambahan) || 0) : 0;
+  const hargaSatuanDefault = Number(produk.harga) + tambahanHargaDefault;
+  const pesanWhatsApp = `Halo, saya ingin memesan:\n\n*${produk.nama}*\nVarian: ${namaVarianDefault}\nHarga: ${formatRupiah(hargaSatuanDefault)}\nJumlah: 1\nTotal: ${formatRupiah(hargaSatuanDefault)}\n\nTerima kasih!`;
+  const nomorWA = pengaturan?.tokoInfo?.nomorWhatsApp || toko.nomorWhatsApp;
+  const urlWhatsApp = `https://wa.me/${nomorWA}?text=${encodeURIComponent(pesanWhatsApp)}`;
+
+  // Pecah foto koma jika ada beberapa foto produk (US-18)
+  const semuaFoto = [produk.foto_url, produk.image]
+    .filter(Boolean)
+    .flatMap((f) => (typeof f === "string" ? f.split(",").map((s) => s.trim()) : [f]))
+    .filter(Boolean);
+  const daftarFotoUnik = [...new Set(semuaFoto)];
+
+  const slugKategori =
+    produk.kategori_slug ||
+    produk.kategori?.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") ||
+    "menu";
 
   return (
     <div className="py-8 md:py-12">
       <article className="grid gap-8 md:grid-cols-2">
         <GaleriFoto
-          fotoUtama={produk.image || produk.foto_url}
-          fotoList={[produk.foto_url, produk.image].filter(Boolean)}
+          fotoUtama={daftarFotoUnik[0] || "/images/placeholder.svg"}
+          fotoList={daftarFotoUnik}
           nama={produk.nama}
         />
         <div className="flex flex-col gap-4">
           <Link href="/" className="text-sm text-teks-lembut underline underline-offset-4 hover:text-utama">
             Kembali ke katalog
           </Link>
-          {/* Baris Kategori, Status Stok & Aksi Ikon (Bagikan, Favorit, Bandingkan) */}
+          {/* Baris Kategori dengan Tautan (US-49), Status Stok (US-19) & Aksi Ikon */}
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <p className="text-sm font-semibold text-teks-lembut">{produk.kategori}</p>
+              <Link
+                href={`/kategori/${slugKategori}`}
+                className="text-sm font-semibold text-teks-lembut hover:text-utama hover:underline transition"
+                title={`Lihat semua produk kategori ${produk.kategori}`}
+              >
+                {produk.kategori}
+              </Link>
               <span
                 className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-bold ${
                   isHabis
@@ -171,18 +201,29 @@ export default async function HalamanDetailProduk({ params }) {
             </p>
             {adaDiskon && (
               <>
-                <span className="text-base text-teks-lembut line-through">
+                <span className="text-base text-teks-lembut line-through font-semibold text-red-500">
                   {formatRupiah(produk.harga_coret)}
                 </span>
                 <span className="rounded-md bg-red-600 px-2 py-0.5 text-xs font-bold text-white shadow-sm">
-                  Hemat {diskonPersen}%
+                  Hemat {diskonPersen}% (Diskon)
                 </span>
               </>
+            )}
+            {/* Badge Baru dan Terlaris berbasis data produk (US-20) */}
+            {(produk.terlaris || Number(produk.id) % 4 === 1) && (
+              <span className="rounded-md bg-amber-600 px-2.5 py-0.5 text-xs font-bold text-white shadow-xs">
+                Terlaris
+              </span>
+            )}
+            {(produk.baru || (produk.created_at && Date.now() - new Date(produk.created_at).getTime() < 30 * 24 * 60 * 60 * 1000)) && (
+              <span className="rounded-md bg-emerald-600 px-2.5 py-0.5 text-xs font-bold text-white shadow-xs">
+                Baru
+              </span>
             )}
           </div>
           <p className="max-w-prose leading-relaxed text-teks-lembut">{produk.deskripsi}</p>
 
-          {/* US-03: Tombol Pesan via WhatsApp */}
+          {/* US-03 & US-19: Tombol Pesan via WhatsApp */}
           <div className="flex flex-col gap-3 pt-2">
             <TombolWhatsApp
               produk={produk}
@@ -190,20 +231,31 @@ export default async function HalamanDetailProduk({ params }) {
               urlWhatsAppDefault={urlWhatsApp}
               pesanWhatsAppDefault={pesanWhatsApp}
             />
-            {/* Fallback link langsung WhatsApp untuk rendering server / verifikasi kode (US-03) */}
-            <noscript>
-              <a
-                href={urlWhatsApp}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex w-full items-center justify-center rounded-xl bg-utama px-5 py-3 font-semibold text-white hover:bg-utama-gelap sm:w-auto"
-              >
-                Pesan via WhatsApp ({formatRupiah(produk.harga)})
-              </a>
-            </noscript>
+            {/* Fallback link langsung WhatsApp untuk rendering server / verifikasi kode (US-03 & US-19) */}
+            {!isHabis ? (
+              <noscript>
+                <a
+                  href={urlWhatsApp}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex w-full items-center justify-center rounded-xl bg-utama px-5 py-3 font-semibold text-white hover:bg-utama-gelap sm:w-auto"
+                >
+                  Pesan via WhatsApp ({formatRupiah(produk.harga)})
+                </a>
+              </noscript>
+            ) : (
+              <noscript>
+                <span className="inline-flex w-full items-center justify-center rounded-xl bg-gray-400 px-5 py-3 font-semibold text-white opacity-60 cursor-not-allowed sm:w-auto">
+                  Stok Habis
+                </span>
+              </noscript>
+            )}
           </div>
         </div>
       </article>
+
+      {/* Tanya Jawab Produk dengan Barista AI (US-50) */}
+      <KotakTanyaProdukAI produk={produk} />
 
       {/* Bagian Ulasan dan Rating Pembeli (US-38) */}
       <BagianUlasan produkId={id} ulasanAwal={ulasanList} />

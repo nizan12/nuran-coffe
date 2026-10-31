@@ -2,8 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import NavAdmin from "@/components/NavAdmin";
 import FormProduk from "@/components/FormProduk";
+import TombolHapusKonfirmasi from "@/components/TombolHapusKonfirmasi";
 import { buatClientServer, normalisasiProduk } from "@/lib/supabase";
-import { ubahProduk } from "@/app/admin/actions";
+import { ubahProduk, hapusProduk } from "@/app/admin/actions";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -86,6 +87,15 @@ export default async function HalamanUbahProduk({ params }) {
             </svg>
             <span>Lihat di Toko</span>
           </Link>
+          <form action={hapusProduk}>
+            <input type="hidden" name="id" value={id} />
+            <TombolHapusKonfirmasi
+              pesan={`Yakin ingin menghapus produk "${produk.nama}"?`}
+              label="Hapus Produk"
+              varian="bahaya"
+              className="py-2 px-3 text-xs rounded-xl"
+            />
+          </form>
           <Link
             href="/admin"
             className="inline-flex items-center gap-1.5 rounded-xl border border-garis bg-permukaan px-3.5 py-2 text-xs font-semibold text-teks hover:border-utama hover:text-utama transition"

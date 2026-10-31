@@ -5,6 +5,7 @@ import TombolInstallPWA from "@/components/TombolInstallPWA";
 import ModalBandingkan from "@/components/ModalBandingkan";
 import WidgetChatAI from "@/components/WidgetChatAI";
 import { toko } from "@/lib/toko";
+import { ambilPengaturanPublik } from "@/lib/pengaturanAdmin";
 
 export const metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://nuran-coffee.vercel.app"),
@@ -39,7 +40,13 @@ export const viewport = {
   themeColor: "#1f6b4f",
 };
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  let namaToko = toko.nama;
+  try {
+    const pub = await ambilPengaturanPublik();
+    if (pub?.tokoInfo?.nama) namaToko = pub.tokoInfo.nama;
+  } catch {}
+
   return (
     <html lang="id" suppressHydrationWarning>
       <head>
@@ -51,9 +58,20 @@ export default function RootLayout({ children }) {
         />
         <link rel="manifest" href="/manifest.webmanifest" />
         <script src="/theme-init.js"></script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').catch(function() {});
+                });
+              }
+            `,
+          }}
+        />
       </head>
       <body className="flex min-h-screen flex-col font-sans antialiased" suppressHydrationWarning>
-        <Header />
+        <Header namaToko={namaToko} />
         <main className="mx-auto w-full max-w-5xl flex-1 px-4">{children}</main>
         <Footer />
         <ModalBandingkan />

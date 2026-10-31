@@ -11,75 +11,99 @@ const PRODUK_PER_HALAMAN = 6;
 
 export default async function HalamanKatalog({ searchParams }) {
   const sp = (await searchParams) || {};
-  const { kategori, cari, urutan, halaman } = sp;
+  const { kategori, cari, urutan, halaman, minHarga, maxHarga } = sp;
 
   let daftarProduk = [];
-  let semuaProduk = [];
+  let totalProduk = 0;
+  let totalHalaman = 1;
+  let halamanSekarang = Math.max(1, parseInt(halaman, 10) || 1);
+  let kategoriList = [];
   let error = null;
 
   try {
     const supabase = buatClientServer();
 
-    // Jalankan query produk dan pengaturan publik secara paralel
-    const [produkRes, pengaturan] = await Promise.all([
-      supabase
-        .from("produk")
-        .select("*, kategori_rel:kategori_id(id, nama, slug)")
-        .order("created_at", { ascending: false }),
+    // Ambil pengaturan publik (untuk produk nonaktif US-32) dan daftar kategori
+    const [pengaturan, katRes] = await Promise.all([
       ambilPengaturanPublik(),
+      supabase
+        .from("kategori")
+        .select("id, nama")
+        .order("urutan", { ascending: true }),
     ]);
 
-    if (produkRes.error) {
-      throw produkRes.error;
-    }
-
-    semuaProduk = normalisasiDaftarProduk(produkRes.data ?? []);
     const nonaktifIds = pengaturan?.nonaktifIds || [];
-    const urutanIds = pengaturan?.urutanIds || [];
+    const daftarKategori = katRes.data || [];
+    kategoriList = daftarKategori.map((k) => k.nama).filter(Boolean);
 
-    // Filter di server: sembunyikan produk nonaktif dari publik (US-32)
-    daftarProduk = semuaProduk.filter((p) => !nonaktifIds.includes(p.id));
+    // Bangun query Supabase dengan count exact dari database
+    let query = supabase
+      .from("produk")
+      .select("*, kategori_rel:kategori_id(id, nama, slug)", { count: "exact" });
 
+    // Sembunyikan produk nonaktif dari publik di level query (US-32)
+    if (nonaktifIds.length > 0) {
+      query = query.not("id", "in", `(${nonaktifIds.join(",")})`);
+    }
+
+    // Filter kategori di query database jika kategori dipilih
     if (kategori) {
-      daftarProduk = daftarProduk.filter((p) => p.kategori === kategori);
-    }
-
-    if (cari) {
-      const kata = cari.toLowerCase();
-      daftarProduk = daftarProduk.filter((p) =>
-        p.nama.toLowerCase().includes(kata)
+      const katCocok = daftarKategori.find(
+        (k) => k.nama.toLowerCase() === kategori.toLowerCase()
       );
+      if (katCocok?.id) {
+        query = query.eq("kategori_id", katCocok.id);
+      }
     }
 
-    // Urutkan produk (US-15 & US-47)
+    // Filter pencarian nama di query database jika cari diisi (US-23)
+    if (cari) {
+      query = query.ilike("nama", `%${cari}%`);
+    }
+
+    // US-24: Filter rentang harga (harga minimum dan harga maksimum)
+    if (minHarga && !isNaN(Number(minHarga))) {
+      query = query.gte("harga", Number(minHarga));
+    }
+    if (maxHarga && !isNaN(Number(maxHarga))) {
+      query = query.lte("harga", Number(maxHarga));
+    }
+
+    // US-15: Urutkan produk langsung di Supabase via .order()
     if (urutan === "termurah") {
-      daftarProduk.sort((a, b) => (Number(a.harga) || 0) - (Number(b.harga) || 0));
+      query = query.order("harga", { ascending: true });
     } else if (urutan === "termahal") {
-      daftarProduk.sort((a, b) => (Number(b.harga) || 0) - (Number(a.harga) || 0));
-    } else if (urutan === "nama-asc") {
-      daftarProduk.sort((a, b) => a.nama.localeCompare(b.nama));
-    } else if (urutanIds.length > 0) {
-      // Terapkan urutan kustom prioritas admin (US-47)
-      daftarProduk.sort((a, b) => {
-        const idxA = urutanIds.indexOf(a.id);
-        const idxB = urutanIds.indexOf(b.id);
-        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-        if (idxA !== -1) return -1;
-        if (idxB !== -1) return 1;
-        return new Date(b.created_at || 0) - new Date(a.created_at || 0);
-      });
+      query = query.order("harga", { ascending: false });
+    } else if (urutan === "nama-asc" || urutan === "nama") {
+      query = query.order("nama", { ascending: true });
     } else {
       // Default: terbaru
-      daftarProduk.sort(
-        (a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)
-      );
+      query = query.order("created_at", { ascending: false });
+    }
+
+    // US-16: Paginasi langsung di query database dengan .range()
+    const awal = (halamanSekarang - 1) * PRODUK_PER_HALAMAN;
+    const akhir = awal + PRODUK_PER_HALAMAN - 1;
+    query = query.range(awal, akhir);
+
+    const { data: hasilProduk, count, error: queryError } = await query;
+
+    if (queryError) {
+      throw queryError;
+    }
+
+    daftarProduk = normalisasiDaftarProduk(hasilProduk ?? []);
+    totalProduk = typeof count === "number" ? count : daftarProduk.length;
+    totalHalaman = Math.ceil(totalProduk / PRODUK_PER_HALAMAN) || 1;
+    if (halamanSekarang > totalHalaman) {
+      halamanSekarang = totalHalaman;
     }
   } catch (err) {
     console.error("Gagal mengambil data produk:", err);
     error = err.message || "Terjadi kesalahan saat mengambil data produk.";
   }
 
-  // Ambil banner promo dari tabel `banner` Supabase jika ada (US-42)
+  // Ambil banner promo dari tabel banner Supabase (US-42)
   let daftarBanner = [];
   try {
     const supabase = buatClientServer();
@@ -91,29 +115,18 @@ export default async function HalamanKatalog({ searchParams }) {
     if (bannerData && bannerData.length > 0) {
       daftarBanner = bannerData;
     }
-  } catch { }
+  } catch {}
 
-  // Hitung paginasi (US-16)
-  const totalProduk = daftarProduk.length;
-  const totalHalaman = Math.ceil(totalProduk / PRODUK_PER_HALAMAN) || 1;
-  const halamanSekarang = Math.max(1, Math.min(Number(halaman) || 1, totalHalaman));
-  const awal = (halamanSekarang - 1) * PRODUK_PER_HALAMAN;
-  const akhir = awal + PRODUK_PER_HALAMAN;
-  const produkDitampilkan = daftarProduk.slice(awal, akhir);
-
-  // Kumpulkan kategori unik untuk filter (gabungkan dengan kategori admin US-31)
-  const kategoriList = [
-    ...new Set(semuaProduk.map((p) => p.kategori).filter(Boolean)),
-  ].sort();
+  const tokoAktif = pengaturan?.tokoInfo || toko;
 
   return (
     <>
       <section className="py-10 sm:py-14">
         <h1 className="max-w-2xl text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
-          {toko.nama}
+          {tokoAktif.nama}
         </h1>
-        <p className="mt-3 max-w-xl text-lg text-teks-lembut">{toko.tagline}</p>
-        <p className="mt-4 text-sm text-teks-lembut">{toko.jamBuka}</p>
+        <p className="mt-3 max-w-xl text-lg text-teks-lembut">{tokoAktif.tagline}</p>
+        <p className="mt-4 text-sm text-teks-lembut">{tokoAktif.jamBuka}</p>
       </section>
 
       {/* Banner Promo Interaktif (US-42) */}
@@ -124,7 +137,7 @@ export default async function HalamanKatalog({ searchParams }) {
           Produk kami
         </h2>
 
-        {!error && semuaProduk.length > 0 && (
+        {!error && (
           <FilterProduk kategoriList={kategoriList} />
         )}
 
@@ -140,7 +153,7 @@ export default async function HalamanKatalog({ searchParams }) {
         ) : (
           <>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-              {produkDitampilkan.map((produk) => (
+              {daftarProduk.map((produk) => (
                 <KartuProduk key={produk.id} produk={produk} />
               ))}
             </div>

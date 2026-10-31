@@ -47,10 +47,62 @@ export default async function HalamanAdmin() {
     (p) => p.stok === 0 || p.status_stok === "habis" || p.stok_habis === true
   ).length;
 
-  // Analisis Produk Terlaris / Paling Banyak Dipesan (US-41)
-  const listAnalitik = Object.values(analitikKlik).sort(
-    (a, b) => (b.totalKlik || 0) - (a.totalKlik || 0)
-  );
+  // Hitung rincian jumlah produk per kategori (US-30)
+  const produkPerKategori = {};
+  daftarProduk.forEach((p) => {
+    const kat = p.kategori || "Tanpa Kategori";
+    produkPerKategori[kat] = (produkPerKategori[kat] || 0) + 1;
+  });
+
+  // Analisis Produk Terlaris / Paling Banyak Dipesan langsung dari tabel database (US-41)
+  let listAnalitik = [];
+  try {
+    const { data: dbKlik } = await supabase
+      .from("klik_whatsapp_per_produk")
+      .select("*")
+      .limit(5);
+
+    if (dbKlik && dbKlik.length > 0) {
+      listAnalitik = dbKlik.map((row) => ({
+        id: row.produk_id,
+        nama: row.nama_produk || "Produk",
+        totalKlik: Number(row.total_klik) || 0,
+        totalJumlah: Number(row.total_jumlah) || 0,
+        totalNilai: Number(row.total_nilai) || 0,
+      }));
+    }
+  } catch {}
+
+  // Fallback query tabel klik_whatsapp jika view belum ada
+  if (listAnalitik.length === 0) {
+    try {
+      const { data: rawKlik } = await supabase
+        .from("klik_whatsapp")
+        .select("produk_id, nama_produk, harga, jumlah");
+
+      if (rawKlik && rawKlik.length > 0) {
+        const grup = {};
+        rawKlik.forEach((k) => {
+          const pid = k.produk_id || k.nama_produk;
+          if (!grup[pid]) {
+            grup[pid] = { id: pid, nama: k.nama_produk, totalKlik: 0, totalJumlah: 0, totalNilai: 0 };
+          }
+          grup[pid].totalKlik += 1;
+          grup[pid].totalJumlah += Number(k.jumlah) || 1;
+          grup[pid].totalNilai += (Number(k.harga) || 0) * (Number(k.jumlah) || 1);
+        });
+        listAnalitik = Object.values(grup).sort((a, b) => b.totalKlik - a.totalKlik).slice(0, 5);
+      }
+    } catch {}
+  }
+
+  // Fallback ke analitikKlik pengaturan jika DB belum terisi
+  if (listAnalitik.length === 0) {
+    listAnalitik = Object.values(analitikKlik).sort(
+      (a, b) => (b.totalKlik || 0) - (a.totalKlik || 0)
+    ).slice(0, 5);
+  }
+
   const maxKlik = listAnalitik[0]?.totalKlik || 1;
   const totalSeluruhKlik = listAnalitik.reduce((sum, item) => sum + (item.totalKlik || 0), 0);
 
@@ -140,7 +192,28 @@ export default async function HalamanAdmin() {
         )}
       </section>
 
-      {/* Header Bagian Tabel */}
+      {/* Rincian Jumlah Produk per Kategori (US-30) */}
+      <section aria-labelledby="judul-rincian-kategori" className="rounded-2xl border border-garis bg-permukaan p-5">
+        <h2 id="judul-rincian-kategori" className="text-base font-bold text-teks mb-3">
+          Rincian Jumlah Produk per Kategori
+        </h2>
+        {Object.keys(produkPerKategori).length === 0 ? (
+          <p className="text-xs text-teks-lembut">Belum ada kategori yang tercatat.</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {Object.entries(produkPerKategori).map(([kat, count]) => (
+              <div key={kat} className="rounded-xl border border-garis bg-latar p-3">
+                <p className="text-xs font-semibold text-teks-lembut truncate">{kat}</p>
+                <p className="mt-1 text-xl font-black text-teks">
+                  {count} <span className="text-xs font-normal text-teks-lembut">menu</span>
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Header Bagian Tabel & Aksi Ekspor CSV (US-35) */}
       <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
         <div>
           <h1 className="text-2xl font-extrabold text-teks">Kelola Produk</h1>
@@ -148,7 +221,20 @@ export default async function HalamanAdmin() {
             Atur katalog, urutan prioritas, dan ekspor/impor data produk tokomu.
           </p>
         </div>
-        <Tombol href="/admin/produk/baru">+ Tambah Produk</Tombol>
+        <div className="flex items-center gap-2">
+          {/* Tombol Ekspor CSV (US-35) */}
+          <a
+            href="/admin/ekspor-csv"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-garis bg-permukaan px-3 py-2 text-xs font-semibold text-teks hover:border-utama hover:text-utama transition shadow-2xs"
+            title="Unduh seluruh data produk ke file CSV"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-teks-lembut">
+              <path fillRule="evenodd" d="M4.5 2A1.5 1.5 0 0 0 3 3.5v13A1.5 1.5 0 0 0 4.5 18h11a1.5 1.5 0 0 0 1.5-1.5V7.621a1.5 1.5 0 0 0-.44-1.06l-4.12-4.122A1.5 1.5 0 0 0 11.378 2H4.5Zm4.75 6.75a.75.75 0 0 1 1.5 0v3.69l1.22-1.22a.75.75 0 1 1 1.06 1.06l-2.5 2.5a.75.75 0 0 1-1.06 0l-2.5-2.5a.75.75 0 1 1 1.06-1.06l1.22 1.22V8.75Z" clipRule="evenodd" />
+            </svg>
+            <span>Ekspor CSV</span>
+          </a>
+          <Tombol href="/admin/produk/baru">+ Tambah Produk</Tombol>
+        </div>
       </div>
 
       {error ? (

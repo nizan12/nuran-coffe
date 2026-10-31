@@ -1,14 +1,28 @@
 import Link from "next/link";
 import { toko } from "@/lib/toko";
+import { ambilPengaturanPublik } from "@/lib/pengaturanAdmin";
 
-export default function Footer() {
+export default async function Footer({ infoToko = null }) {
+  let tokoAktif = infoToko;
+  if (!tokoAktif) {
+    try {
+      const pub = await ambilPengaturanPublik();
+      if (pub?.tokoInfo) tokoAktif = pub.tokoInfo;
+    } catch {}
+  }
+
+  const t = tokoAktif || toko;
+
   return (
     <footer className="mt-16 border-t border-garis bg-permukaan">
       <div className="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-8 text-sm text-teks-lembut sm:flex-row sm:justify-between">
         <div>
-          <p className="font-bold text-teks">{toko.nama}</p>
-          <p>{toko.alamat}</p>
-          <p>{toko.jamBuka}</p>
+          <p className="font-bold text-teks">{t.nama}</p>
+          <p>{t.alamat}</p>
+          <p>{t.jamBuka}</p>
+          {t.nomorWhatsApp && (
+            <p className="text-xs text-teks-lembut/80 mt-0.5">WhatsApp: {t.nomorWhatsApp}</p>
+          )}
         </div>
         <div className="flex flex-col gap-2 sm:items-end">
           <Link href="/tentang" className="self-start underline underline-offset-4 hover:text-utama sm:self-end">

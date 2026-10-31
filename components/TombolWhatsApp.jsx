@@ -155,36 +155,48 @@ export default function TombolWhatsApp({
         </span>
       </div>
 
-      {/* Tombol Pesan WhatsApp & Masukkan Keranjang */}
+      {/* Tombol Pesan WhatsApp & Masukkan Keranjang (US-19: Nonaktif jika stok habis) */}
       <div className="flex flex-col gap-2.5 sm:flex-row">
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={() => {
-            try {
-              fetch("/api/analitik/klik", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  produkId: produk.id,
-                  nama: namaVarian,
-                  harga: hargaSatuan,
-                  jumlah,
-                }),
-              });
-            } catch {}
-          }}
-          className="inline-flex flex-1 items-center justify-center rounded-xl bg-utama px-5 py-3 font-semibold text-white hover:bg-utama-gelap shadow-xs transition"
-        >
-          Pesan via WhatsApp
-        </a>
-        <TombolKeranjang
-          produk={produkUntukKeranjang}
-          jumlah={jumlah}
-          className="py-3 px-5 text-sm rounded-xl font-semibold"
-          teks="+ Masukkan Keranjang"
-        />
+        {isHabis || stokMaksimal <= 0 ? (
+          <button
+            type="button"
+            disabled
+            className="inline-flex flex-1 items-center justify-center rounded-xl border border-garis bg-permukaan/60 px-5 py-3 font-semibold text-teks-lembut opacity-60 cursor-not-allowed shadow-2xs"
+          >
+            Stok Habis
+          </button>
+        ) : (
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => {
+              try {
+                fetch("/api/analitik/klik", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    produkId: produk.id,
+                    nama: namaVarian,
+                    harga: hargaSatuan,
+                    jumlah,
+                  }),
+                });
+              } catch {}
+            }}
+            className="inline-flex flex-1 items-center justify-center rounded-xl bg-utama px-5 py-3 font-semibold text-white hover:bg-utama-gelap shadow-xs transition"
+          >
+            Pesan via WhatsApp
+          </a>
+        )}
+        {!isHabis && stokMaksimal > 0 && (
+          <TombolKeranjang
+            produk={produkUntukKeranjang}
+            jumlah={jumlah}
+            className="py-3 px-5 text-sm rounded-xl font-semibold"
+            teks="+ Masukkan Keranjang"
+          />
+        )}
       </div>
     </div>
   );

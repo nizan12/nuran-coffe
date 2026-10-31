@@ -57,6 +57,11 @@ export default async function HalamanKategori({ params }) {
     );
   });
 
+  // Jika kategori tidak memiliki produk atau tidak ditemukan, kembalikan 404 notFound (US-49)
+  if (terfilter.length === 0) {
+    notFound();
+  }
+
   const namaKategoriTampil =
     terfilter[0]?.kategori || decodedSlug.replace(/-/g, " ");
 

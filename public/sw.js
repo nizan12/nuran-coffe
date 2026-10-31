@@ -45,7 +45,19 @@ self.addEventListener("fetch", (event) => {
         const cached = await caches.match(event.request);
         if (cached) return cached;
 
-        // Jangan pernah kembalikan undefined ke event.respondWith
+        // Fallback untuk navigasi halaman HTML ketika offline (US-14)
+        if (event.request.mode === "navigate") {
+          const cachedHome = await caches.match("/");
+          if (cachedHome) return cachedHome;
+          return new Response(
+            `<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><title>Mode Offline - Nuran Coffee</title><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="font-family:system-ui,sans-serif;padding:2.5rem 1rem;text-align:center;background:#fcfbf9;color:#2b2622;"><h2>Anda Sedang Offline</h2><p>Koneksi internet sedang tidak tersedia. Buka kembali saat online untuk melihat pembaruan katalog.</p></body></html>`,
+            {
+              status: 200,
+              headers: { "Content-Type": "text/html; charset=utf-8" },
+            }
+          );
+        }
+
         return new Response("Koneksi offline atau sumber daya tidak ditemukan.", {
           status: 503,
           statusText: "Service Unavailable",

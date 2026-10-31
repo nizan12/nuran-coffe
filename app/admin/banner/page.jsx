@@ -4,6 +4,7 @@ import TombolHapusKonfirmasi from "@/components/TombolHapusKonfirmasi";
 import { buatClientServer } from "@/lib/supabase";
 import {
   tambahBannerAdmin,
+  ubahBannerAdmin,
   toggleStatusBannerAdmin,
   hapusBannerAdmin,
 } from "@/app/admin/actions";
@@ -139,6 +140,16 @@ export default async function HalamanKelolaBanner() {
           </div>
 
           <div>
+            <label className="text-xs font-semibold text-teks">URL Gambar / Foto Banner (Opsional)</label>
+            <input
+              type="text"
+              name="foto_url"
+              placeholder="https://... atau /promo-kopi.jpg"
+              className="mt-1 w-full rounded-lg border border-garis bg-latar p-2.5 text-sm text-teks placeholder:text-teks-lembut focus:border-utama focus:outline-none"
+            />
+          </div>
+
+          <div>
             <label className="text-xs font-semibold text-teks">Nuansa Warna Gradien</label>
             <select
               name="bg_gradient"
@@ -178,71 +189,161 @@ export default async function HalamanKelolaBanner() {
             {daftarBanner.map((b) => (
               <div
                 key={b.id}
-                className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between hover:bg-permukaan/30 transition"
+                className="flex flex-col gap-4 p-5 hover:bg-permukaan/30 transition"
               >
-                {/* Cuplikan Tampilan Mini Banner */}
-                <div className="flex items-start gap-4 flex-1 min-w-0">
-                  <div
-                    className={`h-20 w-32 shrink-0 rounded-xl bg-gradient-to-r ${b.bg_gradient} p-2.5 flex flex-col justify-between text-white shadow-xs`}
-                  >
-                    <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-white/20 w-fit">
-                      {b.badge}
-                    </span>
-                    <p className="text-[10px] font-bold line-clamp-2 leading-tight">
-                      {b.judul}
-                    </p>
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs text-teks-lembut">#{b.id}</span>
-                      <h3 className="text-sm font-bold text-teks truncate">{b.judul}</h3>
-                    </div>
-                    {b.deskripsi && (
-                      <p className="mt-1 text-xs text-teks-lembut line-clamp-2">
-                        {b.deskripsi}
-                      </p>
-                    )}
-                    <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-teks-lembut">
-                      <span>Tombol: <strong>{b.tombol_teks}</strong></span>
-                      <span>Link: <code className="text-utama">{b.link_url}</code></span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Aksi Toggle Status & Hapus */}
-                <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
-                  <form action={toggleStatusBannerAdmin}>
-                    <input type="hidden" name="id" value={b.id} />
-                    <input type="hidden" name="aktif" value={String(b.aktif)} />
-                    <button
-                      type="submit"
-                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition cursor-pointer active:scale-95 shadow-2xs ${
-                        b.aktif
-                          ? "border-utama/30 bg-utama/10 text-utama hover:border-utama hover:bg-utama/20"
-                          : "border-garis bg-permukaan text-teks-lembut hover:border-teks-lembut hover:text-teks"
-                      }`}
-                      title="Klik untuk mengubah status tampil di beranda"
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  {/* Cuplikan Tampilan Mini Banner */}
+                  <div className="flex items-start gap-4 flex-1 min-w-0">
+                    <div
+                      className={`h-20 w-32 shrink-0 rounded-xl bg-gradient-to-r ${b.bg_gradient} p-2.5 flex flex-col justify-between text-white shadow-xs relative overflow-hidden`}
                     >
-                      <span
-                        className={`h-1.5 w-1.5 rounded-full ${
-                          b.aktif ? "bg-utama shadow-xs" : "bg-teks-lembut/60"
-                        }`}
-                      />
-                      <span>{b.aktif ? "Tampil di Beranda" : "Disembunyikan"}</span>
-                    </button>
-                  </form>
+                      {b.foto_url && (
+                        <img
+                          src={b.foto_url}
+                          alt={b.judul}
+                          className="absolute inset-0 h-full w-full object-cover opacity-40 mix-blend-overlay"
+                        />
+                      )}
+                      <span className="relative z-10 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-white/20 w-fit">
+                        {b.badge}
+                      </span>
+                      <p className="relative z-10 text-[10px] font-bold line-clamp-2 leading-tight">
+                        {b.judul}
+                      </p>
+                    </div>
 
-                  <form action={hapusBannerAdmin}>
-                    <input type="hidden" name="id" value={b.id} />
-                    <TombolHapusKonfirmasi
-                      pesan={`Hapus banner "${b.judul}" secara permanen?`}
-                      label="Hapus"
-                      varian="garis"
-                      className="py-1 px-2.5 text-xs text-red-600 hover:border-red-400"
-                    />
-                  </form>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs text-teks-lembut">#{b.id}</span>
+                        <h3 className="text-sm font-bold text-teks truncate">{b.judul}</h3>
+                      </div>
+                      {b.deskripsi && (
+                        <p className="mt-1 text-xs text-teks-lembut line-clamp-2">
+                          {b.deskripsi}
+                        </p>
+                      )}
+                      <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-teks-lembut">
+                        <span>Tombol: <strong>{b.tombol_teks}</strong></span>
+                        <span>Link: <code className="text-utama">{b.link_url}</code></span>
+                        {b.foto_url && <span>Foto: <code className="text-xs truncate max-w-[120px] inline-block">{b.foto_url}</code></span>}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Aksi Toggle Status & Hapus */}
+                  <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
+                    <form action={toggleStatusBannerAdmin}>
+                      <input type="hidden" name="id" value={b.id} />
+                      <input type="hidden" name="aktif" value={String(b.aktif)} />
+                      <button
+                        type="submit"
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition cursor-pointer active:scale-95 shadow-2xs ${
+                          b.aktif
+                            ? "border-utama/30 bg-utama/10 text-utama hover:border-utama hover:bg-utama/20"
+                            : "border-garis bg-permukaan text-teks-lembut hover:border-teks-lembut hover:text-teks"
+                        }`}
+                        title="Klik untuk mengubah status tampil di beranda"
+                      >
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full ${
+                            b.aktif ? "bg-utama shadow-xs" : "bg-teks-lembut/60"
+                          }`}
+                        />
+                        <span>{b.aktif ? "Tampil di Beranda" : "Disembunyikan"}</span>
+                      </button>
+                    </form>
+
+                    <form action={hapusBannerAdmin}>
+                      <input type="hidden" name="id" value={b.id} />
+                      <TombolHapusKonfirmasi
+                        pesan={`Hapus banner "${b.judul}" secara permanen?`}
+                        label="Hapus"
+                        varian="garis"
+                        className="py-1 px-2.5 text-xs text-red-600 hover:border-red-400"
+                      />
+                    </form>
+                  </div>
                 </div>
+
+                {/* Form Ubah / Edit Banner (US-42) */}
+                <details className="mt-2 rounded-xl border border-garis bg-permukaan/50 p-3.5">
+                  <summary className="text-xs font-bold text-teks cursor-pointer hover:text-utama">
+                    ✏️ Ubah Data Banner Ini
+                  </summary>
+                  <form action={ubahBannerAdmin} className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <input type="hidden" name="id" value={b.id} />
+                    <div className="sm:col-span-2">
+                      <label className="text-[11px] font-semibold text-teks">Judul Promo *</label>
+                      <input
+                        type="text"
+                        name="judul"
+                        defaultValue={b.judul}
+                        required
+                        className="mt-1 w-full rounded border border-garis bg-latar p-2 text-xs text-teks focus:border-utama focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-teks">Teks Badge</label>
+                      <input
+                        type="text"
+                        name="badge"
+                        defaultValue={b.badge || "PROMO"}
+                        className="mt-1 w-full rounded border border-garis bg-latar p-2 text-xs text-teks focus:border-utama focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-teks">Subjudul</label>
+                      <input
+                        type="text"
+                        name="subjudul"
+                        defaultValue={b.subjudul || ""}
+                        className="mt-1 w-full rounded border border-garis bg-latar p-2 text-xs text-teks focus:border-utama focus:outline-none"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="text-[11px] font-semibold text-teks">Deskripsi</label>
+                      <textarea
+                        name="deskripsi"
+                        rows={2}
+                        defaultValue={b.deskripsi || ""}
+                        className="mt-1 w-full rounded border border-garis bg-latar p-2 text-xs text-teks focus:border-utama focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-teks">Teks Tombol (CTA)</label>
+                      <input
+                        type="text"
+                        name="tombol_teks"
+                        defaultValue={b.tombol_teks || "Pesan via WhatsApp"}
+                        className="mt-1 w-full rounded border border-garis bg-latar p-2 text-xs text-teks focus:border-utama focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-teks">Tautan Tujuan (Link URL)</label>
+                      <input
+                        type="text"
+                        name="link_url"
+                        defaultValue={b.link_url || "/"}
+                        className="mt-1 w-full rounded border border-garis bg-latar p-2 text-xs text-teks focus:border-utama focus:outline-none"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="text-[11px] font-semibold text-teks">URL Gambar/Foto Banner</label>
+                      <input
+                        type="text"
+                        name="foto_url"
+                        defaultValue={b.foto_url || ""}
+                        placeholder="https://... atau /promo.jpg"
+                        className="mt-1 w-full rounded border border-garis bg-latar p-2 text-xs text-teks focus:border-utama focus:outline-none"
+                      />
+                    </div>
+                    <div className="sm:col-span-2 flex justify-end">
+                      <Tombol type="submit" varian="utama" className="py-1.5 px-3.5 text-xs">
+                        Simpan Perubahan Banner
+                      </Tombol>
+                    </div>
+                  </form>
+                </details>
               </div>
             ))}
           </div>

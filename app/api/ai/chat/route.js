@@ -3,12 +3,48 @@ import { buatClientServer, normalisasiDaftarProduk } from "@/lib/supabase";
 import { ambilPengaturanAdmin } from "@/lib/pengaturanAdmin";
 import { toko } from "@/lib/toko";
 
+// Rate limiter in-memory sederhana (US-50)
+const rateLimitMap = new Map();
+
+function periksaRateLimit(ip) {
+  const sekarang = Date.now();
+  const riwayat = rateLimitMap.get(ip) || [];
+  // Bersihkan request yang lebih dari 60 detik
+  const riwayatAktif = riwayat.filter((waktu) => sekarang - waktu < 60000);
+  if (riwayatAktif.length >= 20) {
+    return false; // Melebihi 20 request per menit
+  }
+  riwayatAktif.push(sekarang);
+  rateLimitMap.set(ip, riwayatAktif);
+  return true;
+}
+
 export async function POST(request) {
   try {
+    // 1. Validasi Rate Limit
+    const ip =
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      request.headers.get("x-real-ip") ||
+      "127.0.0.1";
+
+    if (!periksaRateLimit(ip)) {
+      return NextResponse.json(
+        { error: "Terlalu banyak permintaan tanya AI. Silakan tunggu 1 menit lagi." },
+        { status: 429 }
+      );
+    }
+
     const { pesan, riwayat = [] } = await request.json();
 
+    // 2. Validasi input dan batas panjang karakter (US-50)
     if (!pesan || !pesan.trim()) {
       return NextResponse.json({ error: "Pesan tidak boleh kosong." }, { status: 400 });
+    }
+    if (pesan.length > 500) {
+      return NextResponse.json(
+        { error: "Pesan terlalu panjang (maksimal 500 karakter)." },
+        { status: 400 }
+      );
     }
 
     // Ambil daftar produk terkini dari Supabase (lengkap dengan foto untuk kartu produk)

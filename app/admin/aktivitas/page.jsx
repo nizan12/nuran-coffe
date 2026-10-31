@@ -1,4 +1,5 @@
 import NavAdmin from "@/components/NavAdmin";
+import { buatClientServer } from "@/lib/supabase";
 import { ambilPengaturanAdmin } from "@/lib/pengaturanAdmin";
 import { kosongkanLogAktivitas } from "@/app/admin/actions";
 import TombolHapusKonfirmasi from "@/components/TombolHapusKonfirmasi";
@@ -11,8 +12,37 @@ export const metadata = {
 };
 
 export default async function HalamanLogAktivitas() {
-  const config = await ambilPengaturanAdmin();
-  const logs = Array.isArray(config.auditLog) ? config.auditLog : [];
+  const supabase = buatClientServer();
+
+  // US-45: Query log aktivitas langsung dari database dengan limit 50 baris terbaru
+  let logs = [];
+  try {
+    const { data } = await supabase
+      .from("log_aktivitas")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (data && data.length > 0) {
+      logs = data.map((l) => ({
+        id: String(l.id),
+        timestamp: l.created_at,
+        user: l.admin_email || "Admin",
+        aksi: l.aksi,
+        rincian: l.rincian || "",
+      }));
+    }
+  } catch (err) {
+    console.error("Gagal memuat log_aktivitas:", err);
+  }
+
+  // Fallback jika belum ada baris di database
+  if (logs.length === 0) {
+    const config = await ambilPengaturanAdmin();
+    if (Array.isArray(config.auditLog)) {
+      logs = config.auditLog.slice(0, 50);
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6 py-8">

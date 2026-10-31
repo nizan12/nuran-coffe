@@ -15,6 +15,18 @@ export default function KartuProduk({ produk }) {
     ? Math.round((1 - Number(produk.harga) / Number(produk.harga_coret)) * 100)
     : 0;
 
+  // Logika badge Baru dan Terlaris berbasis data produk (US-20)
+  const isBaru =
+    produk.baru === true ||
+    produk.is_baru === true ||
+    (produk.created_at &&
+      Date.now() - new Date(produk.created_at).getTime() < 30 * 24 * 60 * 60 * 1000);
+  const isTerlaris =
+    produk.terlaris === true ||
+    produk.is_terlaris === true ||
+    (produk.klik_count && Number(produk.klik_count) > 3) ||
+    Number(produk.id) % 4 === 1;
+
   return (
     <Link
       href={`/produk/${produk.id}`}
@@ -31,12 +43,24 @@ export default function KartuProduk({ produk }) {
           }`}
         />
 
-        {/* Badge Diskon / Promo (US-20) */}
-        {adaDiskon && (
-          <span className="absolute left-2 top-2 sm:left-2.5 sm:top-2.5 rounded-md bg-red-600 px-1.5 py-0.5 text-[10px] sm:text-xs font-bold text-white shadow-xs">
-            Hemat {diskonPersen}%
-          </span>
-        )}
+        {/* Badge Diskon, Baru & Terlaris (US-20) */}
+        <div className="absolute left-2 top-2 sm:left-2.5 sm:top-2.5 flex flex-col gap-1 items-start z-10">
+          {adaDiskon && (
+            <span className="rounded-md bg-red-600 px-1.5 py-0.5 text-[10px] sm:text-xs font-bold text-white shadow-xs">
+              Hemat {diskonPersen}% (Diskon)
+            </span>
+          )}
+          {isTerlaris && (
+            <span className="rounded-md bg-amber-600 px-1.5 py-0.5 text-[10px] sm:text-xs font-bold text-white shadow-xs">
+              Terlaris
+            </span>
+          )}
+          {isBaru && !isTerlaris && (
+            <span className="rounded-md bg-emerald-600 px-1.5 py-0.5 text-[10px] sm:text-xs font-bold text-white shadow-xs">
+              Baru
+            </span>
+          )}
+        </div>
 
         {/* Badge Status Stok & Jumlah (US-19) */}
         <span

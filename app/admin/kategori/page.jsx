@@ -2,7 +2,7 @@ import NavAdmin from "@/components/NavAdmin";
 import Tombol from "@/components/Tombol";
 import { buatClientServer } from "@/lib/supabase";
 import { ambilPengaturanAdmin } from "@/lib/pengaturanAdmin";
-import { tambahKategoriAdmin, hapusKategoriAdmin } from "@/app/admin/actions";
+import { tambahKategoriAdmin, ubahKategoriAdmin, hapusKategoriAdmin } from "@/app/admin/actions";
 
 export const metadata = {
   title: "Kelola Kategori - Admin",
@@ -116,7 +116,26 @@ export default async function HalamanKelolaKategori() {
                   0;
                 return (
                   <tr key={kat.id || kat.nama} className="border-t border-garis">
-                    <td className="px-5 py-3.5 font-bold text-teks">{kat.nama}</td>
+                    <td className="px-5 py-3.5">
+                      <form action={ubahKategoriAdmin} className="flex items-center gap-2">
+                        <input type="hidden" name="id" value={kat.id || ""} />
+                        <input type="hidden" name="namaLama" value={kat.nama} />
+                        <input
+                          type="text"
+                          name="namaBaru"
+                          defaultValue={kat.nama}
+                          required
+                          className="rounded border border-garis bg-latar px-2.5 py-1 text-sm font-semibold text-teks focus:border-utama focus:outline-none"
+                        />
+                        <button
+                          type="submit"
+                          className="rounded bg-permukaan px-2 py-1 text-xs font-medium text-teks hover:bg-garis cursor-pointer"
+                          title="Simpan nama kategori baru"
+                        >
+                          Simpan
+                        </button>
+                      </form>
+                    </td>
                     <td className="px-5 py-3.5">
                       <span
                         className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
@@ -129,16 +148,22 @@ export default async function HalamanKelolaKategori() {
                       </span>
                     </td>
                     <td className="px-5 py-3.5 text-right">
-                      <form action={hapusKategoriAdmin} className="inline">
-                        <input type="hidden" name="nama" value={kat.nama} />
-                        <input type="hidden" name="id" value={kat.id || ""} />
-                        <button
-                          type="submit"
-                          className="text-xs text-red-600 hover:underline cursor-pointer"
-                        >
-                          Hapus Kategori
-                        </button>
-                      </form>
+                      {totalItem > 0 ? (
+                        <span className="text-xs text-teks-lembut" title="Tidak dapat dihapus karena masih digunakan produk">
+                          Sedang digunakan
+                        </span>
+                      ) : (
+                        <form action={hapusKategoriAdmin} className="inline">
+                          <input type="hidden" name="nama" value={kat.nama} />
+                          <input type="hidden" name="id" value={kat.id || ""} />
+                          <button
+                            type="submit"
+                            className="text-xs text-red-600 hover:underline cursor-pointer"
+                          >
+                            Hapus
+                          </button>
+                        </form>
+                      )}
                     </td>
                   </tr>
                 );
