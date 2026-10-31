@@ -23,12 +23,18 @@ export default function TidakDitemukan() {
       </p>
 
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-        <Tombol href="/" varian="utama">
-          Kembali ke Beranda Katalog
-        </Tombol>
-        <Tombol href="/tentang" varian="garis">
+        <Link
+          href="/"
+          className="inline-flex items-center justify-center rounded-xl bg-utama px-5 py-3 text-sm font-bold text-white shadow-xs hover:bg-utama-gelap transition"
+        >
+          Kembali ke Beranda
+        </Link>
+        <Link
+          href="/tentang"
+          className="inline-flex items-center justify-center rounded-xl border border-garis bg-permukaan px-5 py-3 text-sm font-semibold text-teks hover:border-utama transition"
+        >
           Tentang & Kontak Toko
-        </Tombol>
+        </Link>
       </div>
     </div>
   );

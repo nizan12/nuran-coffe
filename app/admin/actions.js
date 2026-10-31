@@ -18,6 +18,8 @@ export {
   toggleStatusProduk,
   simpanUrutanProduk,
   tambahStokCepat,
+  tambahVarian,
+  hapusVarian,
 } from "./actions/produk";
 
 // Banner Promo (US-42)

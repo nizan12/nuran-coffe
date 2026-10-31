@@ -5,7 +5,8 @@ import Tombol from "@/components/Tombol";
 import { buatClientServer, normalisasiDaftarProduk } from "@/lib/supabase";
 import { ambilPengaturanAdmin } from "@/lib/pengaturanAdmin";
 import { formatRupiah } from "@/lib/format";
-import { imporProdukCSV, toggleProdukAktif } from "@/app/admin/actions";
+import FormImporCSV from "@/components/admin/FormImporCSV";
+import { toggleProdukAktif } from "@/app/admin/actions";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -283,28 +284,8 @@ export default async function HalamanAdmin({ searchParams }) {
           )}
         </form>
 
-        {/* Form Impor Produk CSV (US-46) */}
-        <form
-          action={imporProdukCSV}
-          className="flex flex-wrap items-center gap-2"
-        >
-          <label className="text-xs font-semibold text-teks-lembut whitespace-nowrap">
-            Impor CSV:
-          </label>
-          <input
-            type="file"
-            name="file_csv"
-            accept=".csv"
-            required
-            className="text-xs text-teks file:mr-2 file:rounded-lg file:border-0 file:bg-utama/10 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-utama hover:file:bg-utama/20"
-          />
-          <button
-            type="submit"
-            className="rounded-lg bg-utama px-3 py-1 text-xs font-bold text-white hover:bg-utama-gelap transition cursor-pointer"
-          >
-            Unggah
-          </button>
-        </form>
+        {/* Form Impor Produk CSV dengan useActionState (US-46) */}
+        <FormImporCSV />
       </div>
 
       {error ? (

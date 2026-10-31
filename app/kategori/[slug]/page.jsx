@@ -24,18 +24,35 @@ export async function generateMetadata({ params }) {
   };
 }
 
-export default async function HalamanKategori({ params }) {
+export default async function HalamanKategori({ params, searchParams }) {
   const { slug } = await params;
+  const sp = (await searchParams) || {};
+  const urutan = sp.urutan || "";
   const decodedSlug = decodeURIComponent(slug);
 
   const supabase = buatClientServer();
 
+  // US-15 & US-47: Query produk dengan pengurutan dinamis (urutan prioritas, harga termurah, harga termahal, terbaru)
+  let query = supabase
+    .from("produk")
+    .select("*, kategori_rel:kategori_id(id, nama, slug)");
+
+  if (urutan === "termurah") {
+    query = query.order("harga", { ascending: true });
+  } else if (urutan === "termahal") {
+    query = query.order("harga", { ascending: false });
+  } else if (urutan === "terbaru") {
+    query = query.order("created_at", { ascending: false });
+  } else {
+    // US-47: Urutan default katalog publik berdasarkan kolom urutan di database
+    query = query
+      .order("urutan", { ascending: true, nullsFirst: false })
+      .order("created_at", { ascending: false });
+  }
+
   // Jalankan query produk dan pengaturan publik secara paralel
   const [produkRes, pengaturan] = await Promise.all([
-    supabase
-      .from("produk")
-      .select("*, kategori_rel:kategori_id(id, nama, slug)")
-      .order("created_at", { ascending: false }),
+    query,
     ambilPengaturanPublik(),
   ]);
 
@@ -48,7 +65,7 @@ export default async function HalamanKategori({ params }) {
 
   // Filter produk aktif yang cocok dengan slug kategori
   const terfilter = daftarProduk.filter((p) => {
-    if (nonaktifIds.includes(p.id)) return false;
+    if (nonaktifIds.includes(p.id) || p.aktif === false) return false;
     const kat = p.kategori || "";
     return (
       slugify(kat) === slugify(decodedSlug) ||
@@ -79,13 +96,44 @@ export default async function HalamanKategori({ params }) {
       </nav>
 
       {/* Header Halaman Kategori */}
-      <div className="mt-4 border-b border-garis pb-6">
-        <h1 className="text-3xl font-extrabold capitalize tracking-tight text-teks sm:text-4xl">
-          Menu {namaKategoriTampil}
-        </h1>
-        <p className="mt-2 text-sm text-teks-lembut">
-          Menampilkan {terfilter.length} pilihan menu untuk kategori ini.
-        </p>
+      <div className="mt-4 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 border-b border-garis pb-6">
+        <div>
+          <h1 className="text-3xl font-extrabold capitalize tracking-tight text-teks sm:text-4xl">
+            Menu {namaKategoriTampil}
+          </h1>
+          <p className="mt-2 text-sm text-teks-lembut">
+            Menampilkan {terfilter.length} pilihan menu untuk kategori ini.
+          </p>
+        </div>
+
+        {/* US-15: Navigasi Urutkan Produk */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-xs font-semibold text-teks-lembut mr-1">Urutkan:</span>
+          <Link
+            href={`/kategori/${slug}`}
+            className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+              !urutan ? "bg-utama text-white shadow-2xs" : "border border-garis bg-permukaan text-teks hover:border-utama"
+            }`}
+          >
+            Terbaru
+          </Link>
+          <Link
+            href={`/kategori/${slug}?urutan=termurah`}
+            className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+              urutan === "termurah" ? "bg-utama text-white shadow-2xs" : "border border-garis bg-permukaan text-teks hover:border-utama"
+            }`}
+          >
+            Terendah
+          </Link>
+          <Link
+            href={`/kategori/${slug}?urutan=termahal`}
+            className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+              urutan === "termahal" ? "bg-utama text-white shadow-2xs" : "border border-garis bg-permukaan text-teks hover:border-utama"
+            }`}
+          >
+            Tertinggi
+          </Link>
+        </div>
       </div>
 
       {/* Grid Produk */}

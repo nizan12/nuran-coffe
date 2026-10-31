@@ -26,12 +26,18 @@ export default function KartuProduk({ produk }) {
     produk.is_terlaris === true ||
     (produk.klik_count && Number(produk.klik_count) > 3);
 
+  const slugKategori =
+    produk.kategori_slug ||
+    (typeof produk.kategori === "string"
+      ? produk.kategori.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
+      : "menu");
+
   return (
-    <Link
-      href={`/produk/${produk.id}`}
-      className="group relative flex flex-col overflow-hidden rounded-2xl border border-garis bg-latar transition hover:border-utama/50 hover:shadow-xs"
-    >
-      <div className="relative aspect-square w-full overflow-hidden bg-permukaan">
+    <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-garis bg-latar transition hover:border-utama/50 hover:shadow-xs">
+      <Link
+        href={`/produk/${produk.id}`}
+        className="relative aspect-square w-full overflow-hidden bg-permukaan block"
+      >
         <img
           src={ambilFotoUtama(produk)}
           alt={produk.nama}
@@ -79,16 +85,23 @@ export default function KartuProduk({ produk }) {
         </span>
 
         {/* Tombol Bandingkan (US-37) & Tombol Favorit (US-24) */}
-        <div className="absolute bottom-2 right-2 flex items-center gap-1 sm:bottom-2.5 sm:right-2.5 sm:gap-1.5">
+        <div className="absolute bottom-2 right-2 flex items-center gap-1 sm:bottom-2.5 sm:right-2.5 sm:gap-1.5 z-10">
           <TombolBandingkan produk={produk} ikonOnly className="!h-7.5 !w-7.5 sm:!h-8.5 sm:!w-8.5 !shadow-xs" />
           <TombolFavorit produk={produk} className="!h-7.5 !w-7.5 sm:!h-8.5 sm:!w-8.5 !shadow-xs" />
         </div>
-      </div>
+      </Link>
 
       <div className="flex flex-1 flex-col justify-between p-3 sm:p-3.5 gap-2">
         <div>
           <div className="flex items-center justify-between gap-1.5">
-            <p className="text-[11px] sm:text-xs font-medium text-teks-lembut truncate">{produk.kategori}</p>
+            {/* Tautan ke halaman kategori (US-49) */}
+            <Link
+              href={`/kategori/${slugKategori}`}
+              className="text-[11px] sm:text-xs font-semibold text-teks-lembut hover:text-utama hover:underline transition truncate"
+              title={`Lihat semua menu kategori ${produk.kategori}`}
+            >
+              {produk.kategori}
+            </Link>
             <span className="text-[10px] font-semibold shrink-0">
               {isHabis ? (
                 <span className="text-red-500 font-bold">Habis</span>
@@ -97,9 +110,12 @@ export default function KartuProduk({ produk }) {
               )}
             </span>
           </div>
-          <h3 className="font-bold text-xs sm:text-sm leading-snug group-hover:text-utama line-clamp-2 mt-0.5">
+          <Link
+            href={`/produk/${produk.id}`}
+            className="font-bold text-xs sm:text-sm leading-snug hover:text-utama line-clamp-2 mt-0.5 block transition"
+          >
             {produk.nama}
-          </h3>
+          </Link>
         </div>
 
         <div className="mt-auto flex items-center justify-between gap-1.5 pt-1">
@@ -122,6 +138,6 @@ export default function KartuProduk({ produk }) {
           )}
         </div>
       </div>
-    </Link>
+    </div>
   );
 }

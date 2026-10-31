@@ -156,26 +156,27 @@ export default function FormProduk({
             </p>
           )}
 
-          {/* Pemilih Kategori Menu dengan Quick Chips & Datalist */}
+          {/* Pemilih Kategori Menu dari Tabel Kategori (US-31) */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-teks">
-              Kategori Menu
+            <label htmlFor="kategori" className="text-sm font-semibold text-teks">
+              Kategori Menu *
             </label>
             <div className="relative">
-              <input
-                list="daftar-kategori-tersedia"
+              <select
+                id="kategori"
                 name="kategori"
                 value={kategori}
                 onChange={(e) => setKategori(e.target.value)}
-                placeholder="Pilih dari daftar atau ketik kategori baru..."
-                className="w-full rounded-xl border border-garis bg-latar px-3.5 py-2.5 text-sm text-teks placeholder:text-teks-lembut focus:border-utama focus:outline-none focus:ring-1 focus:ring-utama transition"
                 required
-              />
-              <datalist id="daftar-kategori-tersedia">
+                className="w-full rounded-xl border border-garis bg-latar px-3.5 py-2.5 text-sm text-teks focus:border-utama focus:outline-none focus:ring-1 focus:ring-utama transition"
+              >
+                <option value="">-- Pilih dari Daftar Tabel Kategori --</option>
                 {kategoriList.map((kat) => (
-                  <option key={kat.id} value={kat.nama} />
+                  <option key={kat.id} value={kat.nama}>
+                    {kat.nama}
+                  </option>
                 ))}
-              </datalist>
+              </select>
             </div>
 
             {kategoriList.length > 0 && (

@@ -285,35 +285,33 @@ export default function TabelProduk({ daftarProduk, nonaktifIds = [] }) {
                 return (
                   <tr key={produk.id} className="border-t border-garis hover:bg-permukaan/40 transition">
                     {/* Urutan tampil (US-47: Naik - Turun) */}
-                    <td className="w-16 px-3 py-3 text-center whitespace-nowrap">
-                      <div className="flex items-center justify-center gap-1">
-                        <span className="text-[11px] font-mono font-bold text-teks-lembut min-w-[1.2rem]">
+                    <td className="w-20 px-3 py-3 text-center whitespace-nowrap">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <span className="text-xs font-mono font-bold text-teks min-w-[1.2rem]">
                           {produk.urutan || globalIdx + 1}
                         </span>
-                        <div className="flex flex-col gap-0.5">
+                        <div className="flex flex-col gap-1">
                           <button
                             type="button"
                             onClick={() => geserUrutan(globalIdx, -1)}
                             disabled={globalIdx === 0}
-                            className="rounded p-0.5 text-xs text-teks-lembut hover:bg-permukaan hover:text-utama disabled:opacity-25 cursor-pointer"
+                            className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-bold text-teks-lembut hover:bg-permukaan hover:text-utama disabled:opacity-25 cursor-pointer border border-garis/60"
                             title="Naikkan Urutan (Ke Atas)"
                             aria-label="Naikkan Urutan Produk"
                           >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3">
-                              <path fillRule="evenodd" d="M10 17a.75.75 0 0 1-.75-.75V5.612L5.29 9.77a.75.75 0 0 1-1.08-1.04l5.25-5.5a.75.75 0 0 1 1.08 0l5.25 5.5a.75.75 0 1 1-1.08 1.04l-3.96-4.158V16.25A.75.75 0 0 1 10 17Z" clipRule="evenodd" />
-                            </svg>
+                            <span aria-hidden="true">▲</span>
+                            <span>Naik</span>
                           </button>
                           <button
                             type="button"
                             onClick={() => geserUrutan(globalIdx, 1)}
                             disabled={globalIdx === daftarProduk.length - 1}
-                            className="rounded p-0.5 text-xs text-teks-lembut hover:bg-permukaan hover:text-utama disabled:opacity-25 cursor-pointer"
+                            className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-bold text-teks-lembut hover:bg-permukaan hover:text-utama disabled:opacity-25 cursor-pointer border border-garis/60"
                             title="Turunkan Urutan (Ke Bawah)"
                             aria-label="Turunkan Urutan Produk"
                           >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3">
-                              <path fillRule="evenodd" d="M10 3a.75.75 0 0 1 .75.75v10.638l3.96-4.158a.75.75 0 1 1 1.08 1.04l-5.25 5.5a.75.75 0 0 1-1.08 0l-5.25-5.5a.75.75 0 1 1 1.08-1.04l3.96 4.158V3.75A.75.75 0 0 1 10 3Z" clipRule="evenodd" />
-                            </svg>
+                            <span aria-hidden="true">▼</span>
+                            <span>Turun</span>
                           </button>
                         </div>
                       </div>
