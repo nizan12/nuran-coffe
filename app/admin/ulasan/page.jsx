@@ -1,7 +1,11 @@
+import Link from "next/link";
 import NavAdmin from "@/components/NavAdmin";
 import { ambilPengaturanAdmin } from "@/lib/pengaturanAdmin";
 import { moderasiUlasanAction, hapusUlasanAction } from "@/app/admin/actions";
 import TombolHapusKonfirmasi from "@/components/TombolHapusKonfirmasi";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export const metadata = {
   title: "Moderasi Ulasan Pelanggan - Admin",
@@ -34,7 +38,7 @@ export default async function HalamanModerasiUlasan() {
             <table className="w-full text-left text-sm">
               <thead className="bg-permukaan text-xs font-semibold text-teks-lembut border-b border-garis">
                 <tr>
-                  <th className="px-6 py-3">Produk ID</th>
+                  <th className="px-6 py-3">Menu / Produk</th>
                   <th className="px-6 py-3">Nama Pengulas</th>
                   <th className="px-6 py-3">Rating</th>
                   <th className="px-6 py-3">Komentar</th>
@@ -45,8 +49,15 @@ export default async function HalamanModerasiUlasan() {
               <tbody className="divide-y divide-garis">
                 {ulasanList.map((u) => (
                   <tr key={u.id} className="hover:bg-permukaan/30 transition">
-                    <td className="px-6 py-4 text-xs font-mono text-teks-lembut">
-                      #{u.produkId}
+                    <td className="px-6 py-4 text-xs font-semibold text-teks">
+                      <Link
+                        href={`/produk/${u.produkId}`}
+                        target="_blank"
+                        className="hover:text-utama hover:underline transition"
+                        title="Buka produk di tab baru"
+                      >
+                        {u.namaProduk || `#${u.produkId}`}
+                      </Link>
                     </td>
                     <td className="px-6 py-4 text-xs font-bold text-teks">{u.nama}</td>
                     <td className="px-6 py-4 text-xs font-extrabold text-amber-500">

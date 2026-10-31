@@ -1031,6 +1031,7 @@ export async function kirimUlasanAction(prevState, formData) {
   });
 
   revalidatePath(`/produk/${produkId}`);
+  revalidatePath("/admin/ulasan");
   return { sukses: "Terima kasih! Ulasan dan rating Anda berhasil dikirim." };
 }
 
