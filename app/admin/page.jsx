@@ -25,6 +25,7 @@ export default async function HalamanAdmin() {
   ]);
 
   const rawProduk = produkRes.data;
+  const error = produkRes.error;
   const nonaktifIds = pengaturan.nonaktifIds || [];
   const urutanIds = pengaturan.urutanIds || [];
   const analitikKlik = pengaturan.analitikKlik || {};
