@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { toko } from "@/lib/toko";
+import { toko as defaultToko } from "@/lib/toko";
 
-export default function Footer({ infoToko = null }) {
-  const t = infoToko || toko;
+export default function Footer({ toko = null, infoToko = null }) {
+  const t = toko || infoToko || defaultToko;
 
   return (
     <footer className="mt-16 border-t border-garis bg-permukaan">

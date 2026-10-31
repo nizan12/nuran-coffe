@@ -9,9 +9,10 @@ import {
   kosongkanKeranjang,
 } from "@/lib/keranjang";
 import { formatRupiah, ambilFotoUtama } from "@/lib/format";
-import { toko } from "@/lib/toko";
+import { toko as defaultToko } from "@/lib/toko";
 
-export default function KeranjangDrawer() {
+export default function KeranjangDrawer({ toko = null }) {
+  const tokoInfo = toko || defaultToko;
   const [buka, setBuka] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [items, setItems] = useState([]);
@@ -50,7 +51,7 @@ export default function KeranjangDrawer() {
   function checkoutWhatsApp() {
     if (items.length === 0) return;
 
-    let pesan = `Halo *${toko.nama}*, saya ingin memesan:\n\n`;
+    let pesan = `Halo *${tokoInfo.nama}*, saya ingin memesan:\n\n`;
 
     items.forEach((item, index) => {
       pesan += `${index + 1}. *${item.nama}*\n   ${item.jumlah}x @ ${formatRupiah(item.harga)} = ${formatRupiah(item.harga * item.jumlah)}\n`;
@@ -79,7 +80,7 @@ export default function KeranjangDrawer() {
       } catch {}
     });
 
-    const url = `https://wa.me/${toko.nomorWhatsApp}?text=${encodeURIComponent(pesan)}`;
+    const url = `https://wa.me/${tokoInfo.nomorWhatsApp}?text=${encodeURIComponent(pesan)}`;
     window.open(url, "_blank");
   }
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { toko } from "@/lib/toko";
+import { toko as defaultToko } from "@/lib/toko";
 import KeranjangDrawer from "@/components/KeranjangDrawer";
 import ModalFavorit from "@/components/ModalFavorit";
 import TombolTema from "@/components/TombolTema";
@@ -80,8 +80,8 @@ function TombolToggleTema() {
   );
 }
 
-export default function Header({ namaToko = null }) {
-  const displayNama = namaToko || toko.nama;
+export default function Header({ toko = null, namaToko = null }) {
+  const displayNama = toko?.nama || namaToko || defaultToko.nama;
 
   return (
     <header className="border-b border-garis bg-latar sticky top-0 z-40 backdrop-blur-md bg-latar/90">
@@ -103,7 +103,7 @@ export default function Header({ namaToko = null }) {
             Tentang Toko
           </Link>
           <ModalFavorit />
-          <KeranjangDrawer />
+          <KeranjangDrawer toko={toko} />
           <TombolTema />
         </nav>
       </div>

@@ -4,32 +4,32 @@ import Footer from "@/components/Footer";
 import TombolInstallPWA from "@/components/TombolInstallPWA";
 import ModalBandingkan from "@/components/ModalBandingkan";
 import WidgetChatAI from "@/components/WidgetChatAI";
-import { toko } from "@/lib/toko";
-import { ambilPengaturanPublik } from "@/lib/pengaturanAdmin";
+import { buatClientServer } from "@/lib/supabase";
+import { toko as defaultToko } from "@/lib/toko";
 
 export const metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://nuran-coffee.vercel.app"),
   title: {
-    default: `${toko.nama} - Katalog & Pesan Kopi`,
-    template: `%s | ${toko.nama}`,
+    default: `${defaultToko.nama} - Katalog & Pesan Kopi`,
+    template: `%s | ${defaultToko.nama}`,
   },
-  description: toko.tagline,
+  description: defaultToko.tagline,
   openGraph: {
-    title: `${toko.nama} - Katalog & Pesan Kopi`,
-    description: toko.tagline,
-    siteName: toko.nama,
+    title: `${defaultToko.nama} - Katalog & Pesan Kopi`,
+    description: defaultToko.tagline,
+    siteName: defaultToko.nama,
     locale: "id_ID",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: toko.nama,
-    description: toko.tagline,
+    title: defaultToko.nama,
+    description: defaultToko.tagline,
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: toko.nama,
+    title: defaultToko.nama,
   },
   icons: {
     apple: "/icons/icon-192.png",
@@ -40,7 +40,30 @@ export const viewport = {
   themeColor: "#1f6b4f",
 };
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  let toko = defaultToko;
+
+  // US-43: Ambil pengaturan toko langsung dari database Supabase (pengaturan_toko)
+  try {
+    const supabase = buatClientServer();
+    const { data: dbToko } = await supabase
+      .from("pengaturan_toko")
+      .select("*")
+      .limit(1)
+      .maybeSingle();
+
+    if (dbToko) {
+      toko = {
+        nama: dbToko.nama || defaultToko.nama,
+        nomorWhatsApp: dbToko.nomor_whatsapp || defaultToko.nomorWhatsApp,
+        alamat: dbToko.alamat || defaultToko.alamat,
+        jamBuka: dbToko.jam_buka || defaultToko.jamBuka,
+        tagline: dbToko.tagline || defaultToko.tagline || "",
+        deskripsi: dbToko.deskripsi || defaultToko.deskripsi || "",
+      };
+    }
+  } catch {}
+
   return (
     <html lang="id" suppressHydrationWarning>
       <head>
@@ -65,9 +88,9 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body className="flex min-h-screen flex-col font-sans antialiased" suppressHydrationWarning>
-        <Header />
+        <Header toko={toko} />
         <main className="mx-auto w-full max-w-5xl flex-1 px-4">{children}</main>
-        <Footer />
+        <Footer toko={toko} />
         <ModalBandingkan />
         <WidgetChatAI />
         <TombolInstallPWA />

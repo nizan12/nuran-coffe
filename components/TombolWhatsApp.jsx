@@ -17,8 +17,12 @@ export default function TombolWhatsApp({
   varianList = [],
   urlWhatsAppDefault = null,
   pesanWhatsAppDefault = null,
+  nomorWhatsApp = null,
+  namaToko = null,
 }) {
   const [jumlah, setJumlah] = useState(1);
+  const targetNomor = nomorWhatsApp || toko.nomorWhatsApp;
+  const targetNama = namaToko || toko.nama;
 
   const varianTersedia = Array.isArray(varianList) && varianList.length > 0
     ? varianList
@@ -48,12 +52,12 @@ export default function TombolWhatsApp({
       ? `${produk.nama} (${varianAktif.nama})`
       : produk.nama;
 
-  // Format link WhatsApp per produk (US-03)
-  const pesan = `Halo, saya ingin memesan:\n\n*${namaVarian}*\nVarian: ${varianAktif?.nama || "Regular"}\nHarga: ${formatRupiah(hargaSatuan)}\nJumlah: ${jumlah}\nTotal: ${formatRupiah(total)}\n\nTerima kasih!`;
+  // Format link WhatsApp per produk (US-03 & US-43)
+  const pesan = `Halo ${targetNama}, saya ingin memesan:\n\n*${namaVarian}*\nVarian: ${varianAktif?.nama || "Regular"}\nHarga: ${formatRupiah(hargaSatuan)}\nJumlah: ${jumlah}\nTotal: ${formatRupiah(total)}\n\nTerima kasih!`;
   const url =
     jumlah === 1 && (!varianAktif || varianAktif.nama === "Regular") && urlWhatsAppDefault
       ? urlWhatsAppDefault
-      : `https://wa.me/${toko.nomorWhatsApp}?text=${encodeURIComponent(pesan)}`;
+      : `https://wa.me/${targetNomor}?text=${encodeURIComponent(pesan)}`;
 
   const produkUntukKeranjang = {
     ...produk,

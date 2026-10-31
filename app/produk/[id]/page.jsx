@@ -20,13 +20,18 @@ export const revalidate = 0;
 export async function generateMetadata({ params }) {
   const { id } = await params;
   const supabase = buatClientServer();
-  const [pengaturan, { data: rawProduk, error }] = await Promise.all([
+  const [pengaturan, { data: rawProduk, error }, { data: dbToko }] = await Promise.all([
     ambilPengaturanPublik(),
     supabase
       .from("produk")
       .select("*, kategori_rel:kategori_id(id, nama, slug)")
       .eq("id", id)
       .single(),
+    supabase
+      .from("pengaturan_toko")
+      .select("*")
+      .limit(1)
+      .maybeSingle(),
   ]);
 
   const nonaktifIds = pengaturan?.nonaktifIds || [];
@@ -36,18 +41,19 @@ export async function generateMetadata({ params }) {
     notFound();
   }
 
+  const namaToko = dbToko?.nama || toko.nama;
   const gambar = produk.image || produk.foto_url;
 
   return {
     title: `${produk.nama} - ${formatRupiah(produk.harga)}`,
     description:
       produk.deskripsi ||
-      `Beli ${produk.nama} di ${toko.nama}. Harga ${formatRupiah(produk.harga)}. Siap dipesan via WhatsApp.`,
+      `Beli ${produk.nama} di ${namaToko}. Harga ${formatRupiah(produk.harga)}. Siap dipesan via WhatsApp.`,
     openGraph: {
       title: `${produk.nama} - ${formatRupiah(produk.harga)}`,
       description:
         produk.deskripsi ||
-        `Beli ${produk.nama} di ${toko.nama}. Siap dipesan via WhatsApp.`,
+        `Beli ${produk.nama} di ${namaToko}. Siap dipesan via WhatsApp.`,
       type: "article",
       images: gambar ? [{ url: gambar }] : [],
     },
@@ -63,13 +69,18 @@ export async function generateMetadata({ params }) {
 export default async function HalamanDetailProduk({ params }) {
   const { id } = await params;
   const supabase = buatClientServer();
-  const [pengaturan, { data: rawProduk, error }] = await Promise.all([
+  const [pengaturan, { data: rawProduk, error }, { data: dbToko }] = await Promise.all([
     ambilPengaturanPublik(),
     supabase
       .from("produk")
       .select("*, kategori_rel:kategori_id(id, nama, slug)")
       .eq("id", id)
       .single(),
+    supabase
+      .from("pengaturan_toko")
+      .select("*")
+      .limit(1)
+      .maybeSingle(),
   ]);
 
   const nonaktifIds = pengaturan?.nonaktifIds || [];
@@ -79,6 +90,13 @@ export default async function HalamanDetailProduk({ params }) {
   if (error || !produk || nonaktifIds.includes(Number(id)) || produk.aktif === false) {
     notFound();
   }
+
+  const tokoAktif = dbToko ? {
+    nama: dbToko.nama || toko.nama,
+    nomorWhatsApp: dbToko.nomor_whatsapp || toko.nomorWhatsApp,
+    alamat: dbToko.alamat || toko.alamat,
+    jamBuka: dbToko.jam_buka || toko.jamBuka,
+  } : (pengaturan?.tokoInfo || toko);
 
   // Mengambil ulasan yang sudah disetujui & menghitung rata-rata publik (US-38 & US-39)
   let ulasanList = [];
@@ -137,12 +155,12 @@ export default async function HalamanDetailProduk({ params }) {
     ? Math.round((1 - Number(produk.harga) / Number(produk.harga_coret)) * 100)
     : 0;
 
-  // US-03, US-12 & US-48: Pesan via WhatsApp dengan nama, varian, harga, dan jumlah
+  // US-03, US-12, US-43 & US-48: Pesan via WhatsApp dengan nomor dan nama toko dari database
   const namaVarianDefault = varianList && varianList.length > 0 ? varianList[0].nama : "Regular";
   const tambahanHargaDefault = varianList && varianList.length > 0 ? (Number(varianList[0].harga_tambahan) || 0) : 0;
   const hargaSatuanDefault = Number(produk.harga) + tambahanHargaDefault;
-  const pesanWhatsApp = `Halo, saya ingin memesan:\n\n*${produk.nama}*\nVarian: ${namaVarianDefault}\nHarga: ${formatRupiah(hargaSatuanDefault)}\nJumlah: 1\nTotal: ${formatRupiah(hargaSatuanDefault)}\n\nTerima kasih!`;
-  const nomorWA = pengaturan?.tokoInfo?.nomorWhatsApp || toko.nomorWhatsApp;
+  const pesanWhatsApp = `Halo ${tokoAktif.nama}, saya ingin memesan:\n\n*${produk.nama}*\nVarian: ${namaVarianDefault}\nHarga: ${formatRupiah(hargaSatuanDefault)}\nJumlah: 1\nTotal: ${formatRupiah(hargaSatuanDefault)}\n\nTerima kasih!`;
+  const nomorWA = tokoAktif.nomorWhatsApp;
   const urlWhatsApp = `https://wa.me/${nomorWA}?text=${encodeURIComponent(pesanWhatsApp)}`;
 
   // Pecah foto koma jika ada beberapa foto produk (US-18)
@@ -261,6 +279,8 @@ export default async function HalamanDetailProduk({ params }) {
               varianList={varianList}
               urlWhatsAppDefault={urlWhatsApp}
               pesanWhatsAppDefault={pesanWhatsApp}
+              nomorWhatsApp={tokoAktif.nomorWhatsApp}
+              namaToko={tokoAktif.nama}
             />
             {/* Fallback link langsung WhatsApp untuk rendering server / verifikasi kode (US-03 & US-19) */}
             {!isHabis ? (

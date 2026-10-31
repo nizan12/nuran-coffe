@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { toko as defaultToko } from "@/lib/toko";
+import { buatClientServer } from "@/lib/supabase";
 import { ambilPengaturanPublik } from "@/lib/pengaturanAdmin";
 
 export const dynamic = "force-dynamic";
@@ -11,8 +12,35 @@ export const metadata = {
 };
 
 export default async function HalamanTentang() {
-  const config = await ambilPengaturanPublik();
-  const toko = config.tokoInfo || defaultToko;
+  const supabase = buatClientServer();
+  let toko = defaultToko;
+
+  // US-43: Ambil identitas toko langsung dari database Supabase (pengaturan_toko)
+  try {
+    const { data: dbToko } = await supabase
+      .from("pengaturan_toko")
+      .select("*")
+      .limit(1)
+      .maybeSingle();
+
+    if (dbToko) {
+      toko = {
+        nama: dbToko.nama || defaultToko.nama,
+        nomorWhatsApp: dbToko.nomor_whatsapp || defaultToko.nomorWhatsApp,
+        alamat: dbToko.alamat || defaultToko.alamat,
+        jamBuka: dbToko.jam_buka || defaultToko.jamBuka,
+        tagline: dbToko.tagline || defaultToko.tagline || "",
+        deskripsi: dbToko.deskripsi || defaultToko.deskripsi || "",
+        instagram: dbToko.instagram || defaultToko.instagram || "",
+      };
+    } else {
+      const config = await ambilPengaturanPublik();
+      if (config?.tokoInfo) toko = config.tokoInfo;
+    }
+  } catch {
+    const config = await ambilPengaturanPublik();
+    if (config?.tokoInfo) toko = config.tokoInfo;
+  }
 
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
     `${toko.nama} ${toko.alamat}`
