@@ -24,6 +24,8 @@ export default function KartuProduk({ produk }) {
         <img
           src={ambilFotoUtama(produk)}
           alt={produk.nama}
+          loading="lazy"
+          decoding="async"
           className={`h-full w-full object-cover transition duration-300 group-hover:scale-105 ${
             isHabis ? "opacity-60 grayscale" : ""
           }`}

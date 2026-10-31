@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import KartuProduk from "@/components/KartuProduk";
 import { buatClientServer, normalisasiDaftarProduk } from "@/lib/supabase";
-import { ambilPengaturanAdmin } from "@/lib/pengaturanAdmin";
+import { ambilPengaturanPublik } from "@/lib/pengaturanAdmin";
 import { toko } from "@/lib/toko";
 
 function slugify(text) {
@@ -29,18 +29,21 @@ export default async function HalamanKategori({ params }) {
   const decodedSlug = decodeURIComponent(slug);
 
   const supabase = buatClientServer();
-  const { data: rawProduk, error } = await supabase
-    .from("produk")
-    .select("*, kategori_rel:kategori_id(id, nama, slug)")
-    .order("created_at", { ascending: false });
 
-  if (error || !rawProduk) {
+  // Jalankan query produk dan pengaturan publik secara paralel
+  const [produkRes, pengaturan] = await Promise.all([
+    supabase
+      .from("produk")
+      .select("*, kategori_rel:kategori_id(id, nama, slug)")
+      .order("created_at", { ascending: false }),
+    ambilPengaturanPublik(),
+  ]);
+
+  if (produkRes.error || !produkRes.data) {
     notFound();
   }
 
-  const daftarProduk = normalisasiDaftarProduk(rawProduk);
-
-  const pengaturan = await ambilPengaturanAdmin();
+  const daftarProduk = normalisasiDaftarProduk(produkRes.data);
   const nonaktifIds = pengaturan.nonaktifIds || [];
 
   // Filter produk aktif yang cocok dengan slug kategori

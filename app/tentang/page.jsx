@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { toko as defaultToko } from "@/lib/toko";
-import { ambilPengaturanAdmin } from "@/lib/pengaturanAdmin";
+import { ambilPengaturanPublik } from "@/lib/pengaturanAdmin";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -11,7 +11,7 @@ export const metadata = {
 };
 
 export default async function HalamanTentang() {
-  const config = await ambilPengaturanAdmin();
+  const config = await ambilPengaturanPublik();
   const toko = config.tokoInfo || defaultToko;
 
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(

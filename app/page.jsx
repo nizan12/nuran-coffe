@@ -5,7 +5,7 @@ import TerakhirDilihat from "@/components/TerakhirDilihat";
 import BannerPromo from "@/components/BannerPromo";
 import { toko } from "@/lib/toko";
 import { buatClientServer, normalisasiDaftarProduk } from "@/lib/supabase";
-import { ambilPengaturanAdmin } from "@/lib/pengaturanAdmin";
+import { ambilPengaturanPublik } from "@/lib/pengaturanAdmin";
 
 const PRODUK_PER_HALAMAN = 6;
 
@@ -19,19 +19,20 @@ export default async function HalamanKatalog({ searchParams }) {
   try {
     const supabase = buatClientServer();
 
-    // Ambil semua produk beserta relasi kategori_id
-    const { data, error: sbError } = await supabase
-      .from("produk")
-      .select("*, kategori_rel:kategori_id(id, nama, slug)")
-      .order("created_at", { ascending: false });
+    // Jalankan query produk dan pengaturan publik secara paralel
+    const [produkRes, pengaturan] = await Promise.all([
+      supabase
+        .from("produk")
+        .select("*, kategori_rel:kategori_id(id, nama, slug)")
+        .order("created_at", { ascending: false }),
+      ambilPengaturanPublik(),
+    ]);
 
-    if (sbError) {
-      throw sbError;
+    if (produkRes.error) {
+      throw produkRes.error;
     }
 
-    semuaProduk = normalisasiDaftarProduk(data ?? []);
-
-    const pengaturan = await ambilPengaturanAdmin();
+    semuaProduk = normalisasiDaftarProduk(produkRes.data ?? []);
     const nonaktifIds = pengaturan.nonaktifIds || [];
     const urutanIds = pengaturan.urutanIds || [];
 

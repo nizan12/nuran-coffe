@@ -14,12 +14,17 @@ export const metadata = {
 
 export default async function HalamanAdmin() {
   const supabase = buatClientServer();
-  const { data: rawProduk, error } = await supabase
-    .from("produk")
-    .select("*, kategori_rel:kategori_id(id, nama, slug)")
-    .order("created_at", { ascending: false });
 
-  const pengaturan = await ambilPengaturanAdmin();
+  // Jalankan query produk dan pengaturan admin secara paralel
+  const [produkRes, pengaturan] = await Promise.all([
+    supabase
+      .from("produk")
+      .select("*, kategori_rel:kategori_id(id, nama, slug)")
+      .order("created_at", { ascending: false }),
+    ambilPengaturanAdmin(),
+  ]);
+
+  const rawProduk = produkRes.data;
   const nonaktifIds = pengaturan.nonaktifIds || [];
   const urutanIds = pengaturan.urutanIds || [];
   const analitikKlik = pengaturan.analitikKlik || {};
