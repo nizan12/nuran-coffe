@@ -111,8 +111,8 @@ export default function FilterProduk({ kategoriList }) {
             className="rounded-lg border border-garis bg-latar px-3 py-1.5 text-sm text-teks focus:border-utama focus:outline-none"
           >
             <option value="terbaru">Terbaru</option>
-            <option value="termurah">Harga: Terendah</option>
-            <option value="termahal">Harga: Tertinggi</option>
+            <option value="termurah">Harga: Termurah</option>
+            <option value="termahal">Harga: Termahal</option>
             <option value="nama-asc">Nama: A — Z</option>
           </select>
         </div>

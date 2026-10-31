@@ -123,7 +123,7 @@ export default async function HalamanKategori({ params, searchParams }) {
               urutan === "termurah" ? "bg-utama text-white shadow-2xs" : "border border-garis bg-permukaan text-teks hover:border-utama"
             }`}
           >
-            Terendah
+            Termurah
           </Link>
           <Link
             href={`/kategori/${slug}?urutan=termahal`}
@@ -131,7 +131,7 @@ export default async function HalamanKategori({ params, searchParams }) {
               urutan === "termahal" ? "bg-utama text-white shadow-2xs" : "border border-garis bg-permukaan text-teks hover:border-utama"
             }`}
           >
-            Tertinggi
+            Termahal
           </Link>
         </div>
       </div>
