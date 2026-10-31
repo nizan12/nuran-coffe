@@ -1,4 +1,4 @@
-const CACHE_NAME = "narun-coffee-v1";
+const CACHE_NAME = "nuran-coffee-v1";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();

@@ -298,13 +298,13 @@ where not exists (select 1 from public.banner);
 insert into public.pengaturan_toko (nama, nomor_whatsapp, alamat, jam_buka, tagline, deskripsi, instagram)
 select * from (values
   (
-    'Narun Artisan Coffee',
+    'Nuran Artisan Coffee',
     '6285156670861',
     'Batam Center, Teluk Tering, Kepulauan Riau',
     'Setiap hari, 08.00–20.00',
     'Kelezatan Kopi Nusantara Pilihan & Pastry Panggang Segar, Diseduh Penuh Cerita.',
     'Kedai kopi artisan lokal yang menghadirkan seduhan biji kopi Nusantara pilihan, racikan minuman signature istimewa, serta pastry panggang segar yang siap menemani setiap momen santaimu.',
-    '@naruncoffee'
+    '@nurancoffee'
   )
 ) as data_toko (nama, nomor_whatsapp, alamat, jam_buka, tagline, deskripsi, instagram)
 where not exists (select 1 from public.pengaturan_toko);

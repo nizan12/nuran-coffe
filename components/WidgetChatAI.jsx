@@ -111,7 +111,7 @@ export default function WidgetChatAI() {
     {
       id: "intro",
       sender: "bot",
-      text: "Halo! Saya Barista Virtual Narun Coffee. Sedang mencari kopi yang cocok atau camilan pendamping yang pas? Tanyakan saja di sini!",
+      text: "Halo! Saya Barista Virtual Nuran Coffee. Sedang mencari kopi yang cocok atau camilan pendamping yang pas? Tanyakan saja di sini!",
       produkRekomendasi: [],
     },
   ]);

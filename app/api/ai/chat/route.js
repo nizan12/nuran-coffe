@@ -185,7 +185,7 @@ Contoh: [REKOMENDASI: 3, 6]`;
       const menuKopi = produkAktif.find((p) => p.kategori?.toLowerCase().includes("espresso") || p.kategori?.toLowerCase().includes("signature")) || produkAktif[0];
       const menuPastry = produkAktif.find((p) => p.kategori?.toLowerCase().includes("camilan") || p.kategori?.toLowerCase().includes("pastry"));
 
-      jawaban = `Untuk pilihan kopi terbaik hari ini, kami merekomendasikan ${menuKopi?.nama || "Es Kopi Susu Aren Narun"}. Sangat cocok dinikmati bersama ${menuPastry?.nama || "camilan pastry"} kami yang renyah dan gurih!`;
+      jawaban = `Untuk pilihan kopi terbaik hari ini, kami merekomendasikan ${menuKopi?.nama || "Es Kopi Susu Aren Nuran"}. Sangat cocok dinikmati bersama ${menuPastry?.nama || "camilan pastry"} kami yang renyah dan gurih!`;
       produkRekomendasi = [menuKopi, menuPastry].filter(Boolean);
     }
 

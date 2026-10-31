@@ -1,8 +1,8 @@
-# ☕ Narun Artisan Coffee
+# ☕ Nuran Artisan Coffee
 
 > Kelezatan Kopi Nusantara Pilihan & Pastry Panggang Segar, Diseduh Penuh Cerita.
 
-Aplikasi katalog produk online untuk **Narun Artisan Coffee** — kedai kopi artisan lokal di Batam Center yang menghadirkan seduhan biji kopi Nusantara pilihan, racikan minuman signature istimewa, serta pastry panggang segar. Pengunjung dapat melihat katalog, detail produk, lalu memesan langsung lewat WhatsApp.
+Aplikasi katalog produk online untuk **Nuran Artisan Coffee** — kedai kopi artisan lokal di Batam Center yang menghadirkan seduhan biji kopi Nusantara pilihan, racikan minuman signature istimewa, serta pastry panggang segar. Pengunjung dapat melihat katalog, detail produk, lalu memesan langsung lewat WhatsApp.
 
 🌐 **Live Demo:** [nuran-coffes.vercel.app](https://nuran-coffes.vercel.app)
 
@@ -176,7 +176,7 @@ proxy.js                    # Proteksi rute /admin (middleware)
 
 | | |
 |---|---|
-| **Nama** | Narun Artisan Coffee |
+| **Nama** | Nuran Artisan Coffee |
 | **Alamat** | Batam Center, Teluk Tering, Kepulauan Riau |
 | **Jam Buka** | Setiap hari, 08.00–20.00 |
 | **Pemesanan** | Via WhatsApp langsung dari katalog |
@@ -185,4 +185,4 @@ proxy.js                    # Proteksi rute /admin (middleware)
 
 ## 📄 Lisensi
 
-Proyek ini dibuat untuk keperluan UMKM Narun Artisan Coffee.
+Proyek ini dibuat untuk keperluan UMKM Nuran Artisan Coffee.

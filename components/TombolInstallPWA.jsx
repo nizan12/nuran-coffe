@@ -102,7 +102,7 @@ export default function TombolInstallPWA() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
           <div className="max-w-sm w-full rounded-2xl bg-latar p-6 shadow-2xl border border-garis">
             <div className="flex items-center justify-between pb-3 border-b border-garis">
-              <h3 className="text-base font-bold text-teks">Pasang Aplikasi Narun Coffee</h3>
+              <h3 className="text-base font-bold text-teks">Pasang Aplikasi Nuran Coffee</h3>
               <button
                 type="button"
                 onClick={() => setTampilPetunjuk(false)}
