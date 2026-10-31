@@ -189,20 +189,25 @@ export async function tambahProduk(prevState, formData) {
     }
   }
 
+  const insertPayload = {
+    nama,
+    harga,
+    deskripsi,
+    foto_url: fotoFinal,
+    stok: isNaN(stok) ? 10 : Math.max(0, stok),
+    harga_coret: hargaCoret > harga ? hargaCoret : null,
+    diskon_persen: diskonPersen > 0 ? diskonPersen : null,
+    urutan: 99,
+  };
+
+  if (kategoriId !== null) {
+    insertPayload.kategori = kategoriId;
+    insertPayload.kategori_id = kategoriId;
+  }
+
   const { data: produkBaru, error: insertError } = await supabaseServer
     .from("produk")
-    .insert({
-      nama,
-      harga,
-      kategori,
-      kategori_id: kategoriId,
-      deskripsi,
-      foto_url: fotoFinal,
-      stok: isNaN(stok) ? 10 : Math.max(0, stok),
-      harga_coret: hargaCoret > harga ? hargaCoret : null,
-      diskon_persen: diskonPersen > 0 ? diskonPersen : null,
-      urutan: 99,
-    })
+    .insert(insertPayload)
     .select()
     .single();
 
@@ -242,15 +247,47 @@ export async function ubahProduk(prevState, formData) {
   }
 
   const supabaseServer = buatClientServer();
+
+  let kategoriId = null;
+  if (kategori) {
+    if (!isNaN(Number(kategori))) {
+      kategoriId = Number(kategori);
+    } else {
+      const { data: katData } = await supabaseServer
+        .from("kategori")
+        .select("id")
+        .ilike("nama", kategori)
+        .maybeSingle();
+
+      if (katData?.id) {
+        kategoriId = katData.id;
+      } else {
+        const slug = kategori.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+        const { data: katBaru } = await supabaseServer
+          .from("kategori")
+          .insert({ nama: kategori, slug, urutan: 99 })
+          .select("id")
+          .single();
+        if (katBaru?.id) kategoriId = katBaru.id;
+      }
+    }
+  }
+
+  const updatePayload = {
+    nama,
+    harga,
+    deskripsi,
+    stok: isNaN(stok) ? 10 : Math.max(0, stok),
+  };
+
+  if (kategoriId !== null) {
+    updatePayload.kategori = kategoriId;
+    updatePayload.kategori_id = kategoriId;
+  }
+
   const { error } = await supabaseServer
     .from("produk")
-    .update({
-      nama,
-      harga,
-      kategori,
-      deskripsi,
-      stok: isNaN(stok) ? 10 : Math.max(0, stok),
-    })
+    .update(updatePayload)
     .eq("id", Number(id));
 
   if (error) {

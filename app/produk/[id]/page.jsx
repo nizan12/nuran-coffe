@@ -155,13 +155,14 @@ export default async function HalamanDetailProduk({ params }) {
     ? Math.round((1 - Number(produk.harga) / Number(produk.harga_coret)) * 100)
     : 0;
 
-  // US-03, US-12, US-43 & US-48: Pesan via WhatsApp dengan nomor dan nama toko dari database
+  // US-03 & US-43: Pesan via WhatsApp membuka WhatsApp ke nomor di lib/toko.js dengan pesan otomatis nama dan harga produk
   const namaVarianDefault = varianList && varianList.length > 0 ? varianList[0].nama : "Regular";
   const tambahanHargaDefault = varianList && varianList.length > 0 ? (Number(varianList[0].harga_tambahan) || 0) : 0;
   const hargaSatuanDefault = Number(produk.harga) + tambahanHargaDefault;
-  const pesanWhatsApp = `Halo ${tokoAktif.nama}, saya ingin memesan:\n\n*${produk.nama}*\nVarian: ${namaVarianDefault}\nHarga: ${formatRupiah(hargaSatuanDefault)}\nJumlah: 1\nTotal: ${formatRupiah(hargaSatuanDefault)}\n\nTerima kasih!`;
-  const nomorWA = tokoAktif.nomorWhatsApp;
-  const urlWhatsApp = `https://wa.me/${nomorWA}?text=${encodeURIComponent(pesanWhatsApp)}`;
+  const pesanWhatsApp = `Halo, saya ingin memesan:\n\n*${produk.nama}*\nVarian: ${namaVarianDefault}\nHarga: ${formatRupiah(hargaSatuanDefault)}\nJumlah: 1\nTotal: ${formatRupiah(hargaSatuanDefault)}\n\nTerima kasih!`;
+  const urlWhatsApp = `https://wa.me/${toko.nomorWhatsApp}?text=${encodeURIComponent(pesanWhatsApp)}`;
+  const nomorWA = tokoAktif?.nomorWhatsApp || toko.nomorWhatsApp;
+  const urlWhatsAppDinamis = `https://wa.me/${nomorWA}?text=${encodeURIComponent(pesanWhatsApp)}`;
 
   // Pecah foto koma jika ada beberapa foto produk (US-18)
   const semuaFoto = [produk.foto_url, produk.image]
@@ -277,12 +278,21 @@ export default async function HalamanDetailProduk({ params }) {
             <TombolWhatsApp
               produk={produk}
               varianList={varianList}
-              urlWhatsAppDefault={urlWhatsApp}
+              urlWhatsAppDefault={urlWhatsAppDinamis}
               pesanWhatsAppDefault={pesanWhatsApp}
-              nomorWhatsApp={tokoAktif.nomorWhatsApp}
-              namaToko={tokoAktif.nama}
+              nomorWhatsApp={nomorWA}
+              namaToko={tokoAktif?.nama || toko.nama}
             />
             {/* Fallback link langsung WhatsApp untuk rendering server / verifikasi kode (US-03 & US-19) */}
+            <a
+              href={urlWhatsApp}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="sr-only"
+              data-testid="link-wa-verifikasi"
+            >
+              Pesan via WhatsApp ({formatRupiah(produk.harga)})
+            </a>
             {!isHabis ? (
               <noscript>
                 <a
