@@ -14,18 +14,12 @@ export const metadata = {
 
 export default async function HalamanAdmin() {
   const supabase = buatClientServer();
+  const { data: rawProduk, error } = await supabase
+    .from("produk")
+    .select("*, kategori_rel:kategori_id(id, nama, slug)")
+    .order("created_at", { ascending: false });
 
-  // Jalankan query produk dan pengaturan admin secara paralel
-  const [produkRes, pengaturan] = await Promise.all([
-    supabase
-      .from("produk")
-      .select("*, kategori_rel:kategori_id(id, nama, slug)")
-      .order("created_at", { ascending: false }),
-    ambilPengaturanAdmin(),
-  ]);
-
-  const rawProduk = produkRes.data;
-  const error = produkRes.error;
+  const pengaturan = await ambilPengaturanAdmin();
   const nonaktifIds = pengaturan.nonaktifIds || [];
   const urutanIds = pengaturan.urutanIds || [];
   const analitikKlik = pengaturan.analitikKlik || {};
@@ -67,7 +61,7 @@ export default async function HalamanAdmin() {
       {/* Kartu Metrik Ringkasan Dashboard Admin (US-30) */}
       <section aria-labelledby="judul-ringkasan" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <h2 id="judul-ringkasan" className="sr-only">Ringkasan Statistik Toko</h2>
-
+        
         <div className="rounded-2xl border border-garis bg-permukaan p-4">
           <p className="text-xs font-semibold text-teks-lembut">Total Produk</p>
           <p className="mt-1.5 text-2xl font-black text-teks">{totalProduk}</p>

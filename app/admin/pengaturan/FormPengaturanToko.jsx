@@ -26,7 +26,7 @@ export default function FormPengaturanToko({ defaultValues = {} }) {
         label="Nama Toko"
         name="nama"
         defaultValue={defaultValues.nama || ""}
-        placeholder="Contoh: Nuran Coffee"
+        placeholder="Contoh: Narun Coffee"
         required
       />
 

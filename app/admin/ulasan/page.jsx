@@ -3,9 +3,6 @@ import { ambilPengaturanAdmin } from "@/lib/pengaturanAdmin";
 import { moderasiUlasanAction, hapusUlasanAction } from "@/app/admin/actions";
 import TombolHapusKonfirmasi from "@/components/TombolHapusKonfirmasi";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
 export const metadata = {
   title: "Moderasi Ulasan Pelanggan - Admin",
 };
