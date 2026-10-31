@@ -19,18 +19,20 @@ export default async function HalamanKatalog({ searchParams }) {
   let halamanSekarang = Math.max(1, parseInt(halaman, 10) || 1);
   let kategoriList = [];
   let error = null;
+  let pengaturan = null;
 
   try {
     const supabase = buatClientServer();
 
     // Ambil pengaturan publik (untuk produk nonaktif US-32) dan daftar kategori
-    const [pengaturan, katRes] = await Promise.all([
+    const [hasilPengaturan, katRes] = await Promise.all([
       ambilPengaturanPublik(),
       supabase
         .from("kategori")
         .select("id, nama")
         .order("urutan", { ascending: true }),
     ]);
+    pengaturan = hasilPengaturan;
 
     const nonaktifIds = pengaturan?.nonaktifIds || [];
     const daftarKategori = katRes.data || [];

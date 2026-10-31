@@ -42,9 +42,13 @@ export const viewport = {
 
 export default async function RootLayout({ children }) {
   let namaToko = toko.nama;
+  let tokoInfo = toko;
   try {
     const pub = await ambilPengaturanPublik();
-    if (pub?.tokoInfo?.nama) namaToko = pub.tokoInfo.nama;
+    if (pub?.tokoInfo) {
+      tokoInfo = pub.tokoInfo;
+      if (pub.tokoInfo.nama) namaToko = pub.tokoInfo.nama;
+    }
   } catch {}
 
   return (
@@ -73,7 +77,7 @@ export default async function RootLayout({ children }) {
       <body className="flex min-h-screen flex-col font-sans antialiased" suppressHydrationWarning>
         <Header namaToko={namaToko} />
         <main className="mx-auto w-full max-w-5xl flex-1 px-4">{children}</main>
-        <Footer />
+        <Footer infoToko={tokoInfo} />
         <ModalBandingkan />
         <WidgetChatAI />
         <TombolInstallPWA />

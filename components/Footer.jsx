@@ -1,17 +1,8 @@
 import Link from "next/link";
 import { toko } from "@/lib/toko";
-import { ambilPengaturanPublik } from "@/lib/pengaturanAdmin";
 
-export default async function Footer({ infoToko = null }) {
-  let tokoAktif = infoToko;
-  if (!tokoAktif) {
-    try {
-      const pub = await ambilPengaturanPublik();
-      if (pub?.tokoInfo) tokoAktif = pub.tokoInfo;
-    } catch {}
-  }
-
-  const t = tokoAktif || toko;
+export default function Footer({ infoToko = null }) {
+  const t = infoToko || toko;
 
   return (
     <footer className="mt-16 border-t border-garis bg-permukaan">
