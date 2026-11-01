@@ -42,6 +42,7 @@ export default function NavAdmin() {
       <form action={logoutAdmin} className="ml-auto">
         <button
           type="submit"
+          formAction={logoutAdmin}
           className="rounded-xl border border-garis px-3 py-2 text-teks-lembut transition hover:border-red-600 hover:bg-red-600 hover:text-white cursor-pointer"
         >
           Keluar

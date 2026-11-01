@@ -5,7 +5,7 @@ import { buatClientServer } from "@/lib/supabase";
  * Membuat sitemap dinamis dari database Supabase (produk & kategori) serta rute publik statis.
  */
 export default async function sitemap() {
-  const baseUrl = process.env.SITE_URL || "https://nuran-coffee.vercel.app";
+  const baseUrl = process.env.SITE_URL || "https://nuran-coffes.vercel.app";
 
   let ruteProduk = [];
   let ruteKategori = [];

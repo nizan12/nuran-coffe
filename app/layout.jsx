@@ -8,7 +8,7 @@ import { buatClientServer } from "@/lib/supabase";
 import { toko as defaultToko } from "@/lib/toko";
 
 export const metadata = {
-  metadataBase: new URL(process.env.SITE_URL || "https://nuran-coffee.vercel.app"),
+  metadataBase: new URL(process.env.SITE_URL || "https://nuran-coffes.vercel.app"),
   title: {
     default: `${defaultToko.nama} - Katalog & Pesan Kopi`,
     template: `%s | ${defaultToko.nama}`,
