@@ -38,6 +38,11 @@ export default function TerakhirDilihat({ produkSaatIni = null }) {
     return () => window.removeEventListener("terakhir-dilihat-updated", handleUpdate);
   }, [produkSaatIni?.id]);
 
+  // Sembunyikan bagian ini jika riwayat kosong (syarat US-36)
+  if (!mounted || daftar.length === 0) {
+    return null;
+  }
+
   return (
     <section
       id="terakhir-dilihat"

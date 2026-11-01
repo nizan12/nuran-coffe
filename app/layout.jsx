@@ -75,7 +75,6 @@ export default async function RootLayout({ children }) {
         />
         <link rel="manifest" href="/manifest.webmanifest" />
         <script src="/theme-init.js"></script>
-        <script src="/sw-register.js"></script>
       </head>
       <body className="flex min-h-screen flex-col font-sans antialiased" suppressHydrationWarning>
         <Header toko={toko} />

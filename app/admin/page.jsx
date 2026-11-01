@@ -61,18 +61,25 @@ export default async function HalamanAdmin({ searchParams }) {
     });
   }
 
-  // Hitung metrik ringkasan dashboard (US-30)
-  const totalProduk = daftarProduk.length;
-  const totalNonaktif = daftarProduk.filter((p) => nonaktifIds.includes(p.id)).length;
-  const totalAktif = totalProduk - totalNonaktif;
-  const totalKategori = new Set(daftarProduk.map((p) => p.kategori).filter(Boolean)).size;
-  const totalHabis = daftarProduk.filter(
+  // Hitung metrik ringkasan dashboard dari database (US-30)
+  const totalProduk = totalAdminProduk;
+  const totalNonaktif = nonaktifIds.length;
+  const totalAktif = Math.max(0, totalProduk - totalNonaktif);
+
+  const [{ count: countKategori }, { data: semuaProdukDb }] = await Promise.all([
+    supabase.from("kategori").select("*", { count: "exact", head: true }),
+    supabase.from("produk").select("id, kategori, stok, status_stok, stok_habis"),
+  ]);
+
+  const totalKategori = countKategori || 0;
+  const listSemua = semuaProdukDb || [];
+  const totalHabis = listSemua.filter(
     (p) => p.stok === 0 || p.status_stok === "habis" || p.stok_habis === true
   ).length;
 
-  // Hitung rincian jumlah produk per kategori (US-30)
+  // Hitung rincian jumlah produk per kategori dari seluruh database (US-30)
   const produkPerKategori = {};
-  daftarProduk.forEach((p) => {
+  listSemua.forEach((p) => {
     const kat = p.kategori || "Tanpa Kategori";
     produkPerKategori[kat] = (produkPerKategori[kat] || 0) + 1;
   });
