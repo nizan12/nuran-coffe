@@ -426,7 +426,38 @@ export default function FormProduk({
       {/* KOLOM KANAN (SIDEBAR): FOTO MEDIA, LIVE PREVIEW & AKSI SIMPAN        */}
       {/* ==================================================================== */}
       <div className="lg:col-span-5 flex flex-col gap-6 lg:sticky lg:top-6">
-        {/* KARTU 5: FOTO & GALERI PRODUK */}
+        {/* KARTU 5: UPLOAD FOTO PRODUK (US-29) */}
+        <div className="rounded-3xl border border-garis bg-latar p-5 shadow-xs flex flex-col gap-3">
+          <div className="flex items-center gap-2 border-b border-garis/60 pb-3">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-utama/10 text-utama">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                <path fillRule="evenodd" d="M1 5.25A2.25 2.25 0 0 1 3.25 3h13.5A2.25 2.25 0 0 1 19 5.25v9.5A2.25 2.25 0 0 1 16.75 17H3.25A2.25 2.25 0 0 1 1 14.75v-9.5Zm1.5 5.81v3.69c0 .414.336.75.75.75h13.5a.75.75 0 0 0 .75-.75v-2.69l-3.22-3.22a.75.75 0 0 0-1.06 0l-2.97 2.97-4.47-4.47a.75.75 0 0 0-1.06 0L2.5 11.06Zm10-4.81a1.25 1.25 0 1 1-2.5 0 1.25 1.25 0 0 1 2.5 0Z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-teks">Upload Foto ke Storage (US-29)</h2>
+              <p className="text-xs text-teks-lembut">Format: JPG, PNG, WEBP, GIF (Maks. 5 MB)</p>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="file_gambar" className="text-xs font-semibold text-teks">
+              Pilih Berkas Foto:
+            </label>
+            <input
+              id="file_gambar"
+              name="file_gambar"
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="w-full text-xs text-teks-lembut file:mr-2.5 file:rounded-xl file:border-0 file:bg-utama file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white file:cursor-pointer hover:file:bg-utama-gelap cursor-pointer border border-garis rounded-xl p-1.5 bg-permukaan/50"
+            />
+            <p className="text-[11px] text-teks-lembut">
+              Foto akan otomatis divalidasi dan diunggah langsung ke Supabase Storage bucket.
+            </p>
+          </div>
+        </div>
+
+        {/* KARTU 6: FOTO & GALERI PRODUK */}
         <EditorGaleriFoto
           daftarFoto={daftarFoto}
           setDaftarFoto={setDaftarFoto}

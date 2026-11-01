@@ -75,17 +75,7 @@ export default async function RootLayout({ children }) {
         />
         <link rel="manifest" href="/manifest.webmanifest" />
         <script src="/theme-init.js"></script>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js').catch(function() {});
-                });
-              }
-            `,
-          }}
-        />
+        <script src="/sw-register.js"></script>
       </head>
       <body className="flex min-h-screen flex-col font-sans antialiased" suppressHydrationWarning>
         <Header toko={toko} />

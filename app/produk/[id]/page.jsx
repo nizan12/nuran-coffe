@@ -38,29 +38,32 @@ export async function generateMetadata({ params }) {
   const produk = normalisasiProduk(rawProduk);
 
   if (error || !produk || nonaktifIds.includes(Number(id)) || produk.aktif === false) {
-    notFound();
+    return {
+      title: "Produk Tidak Ditemukan",
+      description: "Halaman produk tidak ditemukan.",
+    };
   }
 
   const namaToko = dbToko?.nama || toko.nama;
   const gambar = produk.image || produk.foto_url;
+  const deskripsiProduk =
+    produk.deskripsi ||
+    `Beli ${produk.nama} di ${namaToko}. Harga ${formatRupiah(produk.harga)}. Siap dipesan via WhatsApp.`;
 
   return {
     title: `${produk.nama} - ${formatRupiah(produk.harga)}`,
-    description:
-      produk.deskripsi ||
-      `Beli ${produk.nama} di ${namaToko}. Harga ${formatRupiah(produk.harga)}. Siap dipesan via WhatsApp.`,
+    description: deskripsiProduk,
     openGraph: {
       title: `${produk.nama} - ${formatRupiah(produk.harga)}`,
-      description:
-        produk.deskripsi ||
-        `Beli ${produk.nama} di ${namaToko}. Siap dipesan via WhatsApp.`,
+      description: deskripsiProduk,
       type: "article",
-      images: gambar ? [{ url: gambar }] : [],
+      siteName: namaToko,
+      images: gambar ? [{ url: gambar, alt: produk.nama }] : [],
     },
     twitter: {
       card: "summary_large_image",
       title: `${produk.nama} - ${formatRupiah(produk.harga)}`,
-      description: produk.deskripsi || "",
+      description: deskripsiProduk,
       images: gambar ? [gambar] : [],
     },
   };

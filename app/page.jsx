@@ -9,6 +9,51 @@ import { ambilPengaturanPublik } from "@/lib/pengaturanAdmin";
 
 const PRODUK_PER_HALAMAN = 6;
 
+// US-26: Metadata SEO dan Open Graph untuk halaman beranda
+export async function generateMetadata() {
+  const supabase = buatClientServer();
+  let namaToko = toko.nama;
+  let tagline = toko.tagline || "Katalog & Pesan Kopi";
+  let deskripsi = toko.deskripsi || `Katalog menu kopi dan camilan UMKM ${namaToko}. Pesan mudah via WhatsApp.`;
+
+  try {
+    const { data: dbToko } = await supabase
+      .from("pengaturan_toko")
+      .select("*")
+      .limit(1)
+      .maybeSingle();
+
+    if (dbToko?.nama) namaToko = dbToko.nama;
+    if (dbToko?.tagline) tagline = dbToko.tagline;
+    if (dbToko?.deskripsi) deskripsi = dbToko.deskripsi;
+  } catch {}
+
+  return {
+    title: `${namaToko} - ${tagline}`,
+    description: deskripsi,
+    openGraph: {
+      title: `${namaToko} - ${tagline}`,
+      description: deskripsi,
+      type: "website",
+      siteName: namaToko,
+      images: [
+        {
+          url: "/icons/icon-512.png",
+          width: 512,
+          height: 512,
+          alt: namaToko,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${namaToko} - ${tagline}`,
+      description: deskripsi,
+      images: ["/icons/icon-512.png"],
+    },
+  };
+}
+
 export default async function HalamanKatalog({ searchParams }) {
   const sp = (await searchParams) || {};
   const { kategori, cari, urutan, halaman, minHarga, maxHarga } = sp;

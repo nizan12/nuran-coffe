@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Tombol from "@/components/Tombol";
 
 export default function TidakDitemukan() {
   return (

@@ -2,61 +2,48 @@
 
 import { useEffect, useState } from "react";
 import KartuProduk from "@/components/KartuProduk";
+import {
+  ambilProdukTerakhirDilihat,
+  simpanProdukTerakhirDilihat,
+  BATAS_JUMLAH,
+} from "@/lib/terakhirDilihat";
 
-const STORAGE_KEY = "nuran_terakhir_dilihat_v1";
-const BATAS_JUMLAH = 6; // Batas jumlah produk terakhir dilihat (US-36)
-
+/**
+ * US-36: Terakhir dilihat
+ * Menampilkan section 'Terakhir Dilihat' di beranda dan halaman detail produk.
+ */
 export default function TerakhirDilihat({ produkSaatIni = null }) {
   const [daftar, setDaftar] = useState([]);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    setMounted(true);
 
-    // 1. Simpan produk saat ini ke localStorage (US-36)
+    // 1. Catat produk saat ini jika sedang di halaman detail
     if (produkSaatIni && produkSaatIni.id) {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        const list = raw ? JSON.parse(raw) : [];
-        const filtered = list.filter((item) => String(item.id) !== String(produkSaatIni.id));
-        const updated = [
-          {
-            id: produkSaatIni.id,
-            nama: produkSaatIni.nama,
-            harga: Number(produkSaatIni.harga) || 0,
-            image: produkSaatIni.image || produkSaatIni.foto_url || "/produk/kopi.svg",
-            kategori: produkSaatIni.kategori || "",
-            harga_coret: produkSaatIni.harga_coret || null,
-            stok: produkSaatIni.stok,
-          },
-          ...filtered,
-        ].slice(0, BATAS_JUMLAH);
-
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      } catch (err) {
-        console.error("Gagal simpan ke localStorage:", err);
-      }
+      simpanProdukTerakhirDilihat(produkSaatIni, BATAS_JUMLAH);
     }
 
-    // 2. Ambil dari localStorage tanpa produk saat ini
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      const list = raw ? JSON.parse(raw) : [];
-      const hasil = produkSaatIni?.id
-        ? list.filter((item) => String(item.id) !== String(produkSaatIni.id))
-        : list;
-      setDaftar(hasil.slice(0, BATAS_JUMLAH));
-    } catch {
-      setDaftar([]);
+    // 2. Ambil daftar riwayat (kecualikan produk saat ini jika ada)
+    const riwayat = ambilProdukTerakhirDilihat(produkSaatIni?.id, BATAS_JUMLAH);
+    setDaftar(riwayat);
+
+    // 3. Dengarkan event jika ada penambahan produk baru
+    function handleUpdate() {
+      const updated = ambilProdukTerakhirDilihat(produkSaatIni?.id, BATAS_JUMLAH);
+      setDaftar(updated);
     }
+
+    window.addEventListener("terakhir-dilihat-updated", handleUpdate);
+    return () => window.removeEventListener("terakhir-dilihat-updated", handleUpdate);
   }, [produkSaatIni?.id]);
 
-  // 3. Sembunyikan bagian ini jika riwayat kosong (US-36)
-  if (daftar.length === 0) {
-    return null;
-  }
-
   return (
-    <section aria-labelledby="judul-terakhir-dilihat" className="mt-12 border-t border-garis pt-8">
+    <section
+      id="terakhir-dilihat"
+      aria-labelledby="judul-terakhir-dilihat"
+      className="mt-12 border-t border-garis pt-8"
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-utama/10 text-utama">
@@ -67,6 +54,7 @@ export default function TerakhirDilihat({ produkSaatIni = null }) {
               strokeWidth="2"
               stroke="currentColor"
               className="h-4 w-4"
+              aria-hidden="true"
             >
               <path
                 strokeLinecap="round"
@@ -79,14 +67,24 @@ export default function TerakhirDilihat({ produkSaatIni = null }) {
             Terakhir Dilihat
           </h2>
         </div>
-        <span className="text-xs text-teks-lembut">Riwayat tersimpan di browser (Maks. {BATAS_JUMLAH})</span>
+        <span className="text-xs text-teks-lembut">
+          Riwayat tersimpan di browser (Maks. {BATAS_JUMLAH})
+        </span>
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-3">
-        {daftar.slice(0, BATAS_JUMLAH).map((item) => (
-          <KartuProduk key={item.id} produk={item} />
-        ))}
-      </div>
+      {mounted && daftar.length > 0 ? (
+        <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-3">
+          {daftar.slice(0, BATAS_JUMLAH).map((item) => (
+            <KartuProduk key={item.id} produk={item} />
+          ))}
+        </div>
+      ) : (
+        <div className="mt-4 rounded-2xl border border-dashed border-garis bg-permukaan/30 py-6 px-4 text-center">
+          <p className="text-xs text-teks-lembut">
+            Belum ada produk yang baru kamu lihat. Klik salah satu menu di atas untuk melihat detail seduhan!
+          </p>
+        </div>
+      )}
     </section>
   );
 }

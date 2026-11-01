@@ -60,6 +60,9 @@ export async function tambahProduk(prevState, formData) {
   let urlHasilUpload = null;
   if (fileGambar && typeof fileGambar === "object" && fileGambar.size > 0) {
     const uploadRes = await unggahFotoLangsung(formData);
+    if (uploadRes?.error) {
+      return { error: "Gagal upload foto: " + uploadRes.error };
+    }
     if (uploadRes?.url) {
       urlHasilUpload = uploadRes.url;
     }
@@ -202,6 +205,28 @@ export async function ubahProduk(prevState, formData) {
     }
   }
 
+  // Upload file gambar ke Supabase Storage jika ada (US-29)
+  const fileGambar = formData.get("file_gambar");
+  let urlHasilUpload = null;
+  if (fileGambar && typeof fileGambar === "object" && fileGambar.size > 0) {
+    const uploadRes = await unggahFotoLangsung(formData);
+    if (uploadRes?.error) {
+      return { error: "Gagal upload foto: " + uploadRes.error };
+    }
+    if (uploadRes?.url) {
+      urlHasilUpload = uploadRes.url;
+    }
+  }
+
+  const inputUrl = formData.get("foto_url");
+  let daftarUrl = [];
+  if (inputUrl && typeof inputUrl === "string") {
+    daftarUrl = inputUrl.split(",").map((s) => s.trim()).filter(Boolean);
+  }
+  if (urlHasilUpload) {
+    daftarUrl.unshift(urlHasilUpload);
+  }
+
   const updatePayload = {
     nama,
     harga,
@@ -209,10 +234,15 @@ export async function ubahProduk(prevState, formData) {
     stok: isNaN(stok) ? 10 : Math.max(0, stok),
   };
 
+  if (daftarUrl.length > 0) {
+    updatePayload.foto_url = daftarUrl.join(", ");
+  }
+
   if (kategoriId !== null) {
     updatePayload.kategori = kategoriId;
     updatePayload.kategori_id = kategoriId;
   }
+
 
   const { error } = await supabaseServer
     .from("produk")
