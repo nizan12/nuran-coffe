@@ -2,7 +2,7 @@ import Link from "next/link";
 import NavAdmin from "@/components/NavAdmin";
 import FormProduk from "@/components/FormProduk";
 import { buatClientServer } from "@/lib/supabase";
-import { tambahProduk } from "@/app/admin/actions";
+import { tambahProduk, buatDeskripsiAI } from "@/app/admin/actions";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -50,6 +50,7 @@ export default async function HalamanTambahProduk() {
       <FormProduk
         kategoriList={kategoriList || []}
         action={tambahProduk}
+        buatDeskripsiAction={buatDeskripsiAI}
       />
     </div>
   );

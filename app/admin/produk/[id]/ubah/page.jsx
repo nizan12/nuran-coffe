@@ -4,7 +4,7 @@ import NavAdmin from "@/components/NavAdmin";
 import FormProduk from "@/components/FormProduk";
 import TombolHapusKonfirmasi from "@/components/TombolHapusKonfirmasi";
 import { buatClientServer, normalisasiProduk } from "@/lib/supabase";
-import { ubahProduk, hapusProduk } from "@/app/admin/actions";
+import { ubahProduk, hapusProduk, buatDeskripsiAI } from "@/app/admin/actions";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -123,6 +123,7 @@ export default async function HalamanUbahProduk({ params }) {
         kategoriList={kategoriList || []}
         labelTombol="Simpan Perubahan"
         action={ubahProduk}
+        buatDeskripsiAction={buatDeskripsiAI}
       />
     </div>
   );

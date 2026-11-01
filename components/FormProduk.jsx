@@ -15,6 +15,7 @@ export default function FormProduk({
   kategoriList = [],
   labelTombol = "Simpan Produk",
   action,
+  buatDeskripsiAction = buatDeskripsiAI,
 }) {
   const [state, formAction, pending] = useActionState(action, null);
 
@@ -99,7 +100,8 @@ export default function FormProduk({
     setLoadingAI(true);
     setPesanAI(null);
     try {
-      const hasil = await buatDeskripsiAI({ nama, kategori });
+      const fn = buatDeskripsiAction || buatDeskripsiAI;
+      const hasil = await fn({ nama, kategori });
       if (hasil?.error) {
         setPesanAI({ error: hasil.error });
       } else if (hasil?.deskripsi) {
@@ -354,13 +356,16 @@ export default function FormProduk({
         <div className="rounded-3xl border border-garis bg-latar p-5 sm:p-6 shadow-xs flex flex-col gap-3">
           <div className="flex items-center justify-between border-b border-garis/60 pb-3">
             <div>
-              <h2 className="text-base font-bold text-teks">Deskripsi Produk</h2>
+              <label htmlFor="deskripsi" className="text-base font-bold text-teks block">
+                Deskripsi Produk
+              </label>
               <p className="text-xs text-teks-lembut">Jelaskan cita rasa, aroma, atau metode seduh menu ini.</p>
             </div>
 
-            {/* Tombol Buat Deskripsi AI */}
+            {/* Tombol Buat Deskripsi AI (US-14) */}
             <button
               type="button"
+              id="tombol-buat-deskripsi-ai"
               onClick={handleBuatDeskripsiAI}
               disabled={loadingAI}
               className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-garis bg-permukaan px-3 py-1.5 text-xs font-semibold text-utama transition hover:border-utama hover:bg-utama hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
@@ -384,7 +389,19 @@ export default function FormProduk({
             </button>
           </div>
 
+          {pesanAI?.sukses && (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30 p-2.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+              {pesanAI.sukses}
+            </div>
+          )}
+          {pesanAI?.error && (
+            <div className="rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/30 p-2.5 text-xs font-semibold text-red-700 dark:text-red-400">
+              {pesanAI.error}
+            </div>
+          )}
+
           <textarea
+            id="deskripsi"
             name="deskripsi"
             rows={4}
             value={deskripsi}

@@ -52,15 +52,10 @@ export default function TombolWhatsApp({ produk, varianList = [], nomorWhatsApp 
   const isHabis =
     produk.stok === 0 || produk.status_stok === "habis" || produk.stok_habis === true || stokMaksimal <= 0;
 
-  // Link WhatsApp berisi nama dan harga produk (US-03)
-  const urlWhatsApp = buatLinkWhatsApp({
-    nomor,
-    namaToko: nama,
-    namaProduk,
-    harga: hargaSatuan,
-    jumlah,
-    varian: varianAktif?.nama || "Regular",
-  });
+  // US-12: Pilihan varian dan jumlah otomatis masuk ke link wa.me
+  const namaVarianPilihan = varianAktif?.nama || "Regular";
+  const pesanWhatsAppVarianJumlah = `Halo ${nama}, saya ingin memesan:\n\n*${namaProduk}*\nVarian: ${namaVarianPilihan}\nHarga: ${formatRupiah(hargaSatuan)}\nJumlah: ${jumlah}\nTotal: ${formatRupiah(hargaSatuan * jumlah)}\n\nTerima kasih!`;
+  const urlWhatsApp = `https://wa.me/${nomor}?text=${encodeURIComponent(pesanWhatsAppVarianJumlah)}`;
 
   function catatKlik() {
     // US-40: pencatatan analitik async tanpa menghambat buka WhatsApp
